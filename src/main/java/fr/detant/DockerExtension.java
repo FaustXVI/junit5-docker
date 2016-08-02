@@ -6,11 +6,15 @@ import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
-import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
-import org.junit.jupiter.api.extension.TestExtensionContext;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ContainerExtensionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class DockerExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
+public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DockerExtension.class);
 
     private final DockerClient dockerClient;
 
@@ -25,8 +29,10 @@ public class DockerExtension implements BeforeTestExecutionCallback, AfterTestEx
     }
 
     @Override
-    public void beforeTestExecution(TestExtensionContext testExtensionContext) throws Exception {
-        Docker dockerAnnotation = testExtensionContext.getTestInstance().getClass().getAnnotation(Docker.class);
+    public void beforeAll(ContainerExtensionContext containerExtensionContext) throws Exception {
+        Docker dockerAnnotation = containerExtensionContext.getTestClass()
+                .orElseThrow(() -> new IllegalStateException("Test should be ran in a class"))
+                .getAnnotation(Docker.class);
         String imageName = dockerAnnotation.image();
         int exposedPort = Integer.parseInt(dockerAnnotation.ports().split(":")[0]);
         int innerPort = Integer.parseInt(dockerAnnotation.ports().split(":")[1]);
@@ -38,10 +44,12 @@ public class DockerExtension implements BeforeTestExecutionCallback, AfterTestEx
                 .withPortBindings(portBindings)
                 .exec();
         dockerClient.startContainerCmd(container.getId()).exec();
+        LOGGER.info("Started container {} with image {}", container.getId(), imageName);
     }
 
     @Override
-    public void afterTestExecution(TestExtensionContext testExtensionContext) throws Exception {
+    public void afterAll(ContainerExtensionContext containerExtensionContext) throws Exception {
         dockerClient.stopContainerCmd(container.getId()).exec();
+        dockerClient.removeContainerCmd(container.getId()).exec();
     }
 }
