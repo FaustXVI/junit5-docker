@@ -4,13 +4,16 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Ports;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.github.dockerjava.api.model.ExposedPort.tcp;
+import static com.github.dockerjava.api.model.Ports.Binding.bindPort;
+import static com.github.dockerjava.core.DockerClientBuilder.getInstance;
+import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
 
 public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
@@ -21,11 +24,7 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
     private CreateContainerResponse container;
 
     public DockerExtension() {
-        dockerClient = DockerClientBuilder.getInstance(
-                DockerClientConfig.createDefaultConfigBuilder()
-                        .withApiVersion("1.22")
-                        .build())
-                .build();
+        dockerClient = getInstance(createDefaultConfigBuilder().withApiVersion("1.22")).build();
     }
 
     @Override
@@ -34,13 +33,11 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
                 .orElseThrow(() -> new IllegalStateException("Test should be ran in a class"))
                 .getAnnotation(Docker.class);
         String imageName = dockerAnnotation.image();
-        int exposedPort = Integer.parseInt(dockerAnnotation.ports().split(":")[0]);
-        int innerPort = Integer.parseInt(dockerAnnotation.ports().split(":")[1]);
-        ExposedPort tcp22 = ExposedPort.tcp(innerPort);
+        ExposedPort innerPort = tcp(dockerAnnotation.ports().inner());
         Ports portBindings = new Ports();
-        portBindings.bind(tcp22, Ports.Binding.bindPort(exposedPort));
+        portBindings.bind(innerPort, bindPort(dockerAnnotation.ports().exposed()));
         container = dockerClient.createContainerCmd(imageName)
-                .withExposedPorts(tcp22)
+                .withExposedPorts(innerPort)
                 .withPortBindings(portBindings)
                 .exec();
         dockerClient.startContainerCmd(container.getId()).exec();

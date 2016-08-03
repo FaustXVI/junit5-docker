@@ -24,7 +24,7 @@ public class CleanUpDockerContainerTest {
         assertEquals(beforeTestContainerCount, countContainers(), "Containers should be remove after execution");
     }
 
-    @Docker(image = "luisbebop/echo-server", ports = "8801:8800")
+    @Docker(image = "luisbebop/echo-server", ports = @Port(exposed = 8801, inner = 8800))
     @Nested
     public class FirstStartDockerContainerTest {
 

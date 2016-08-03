@@ -13,5 +13,5 @@ import java.lang.annotation.Target;
 public @interface Docker {
     String image();
 
-    String ports();
+    Port ports();
 }
