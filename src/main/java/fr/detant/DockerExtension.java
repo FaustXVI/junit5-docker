@@ -10,6 +10,8 @@ import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+
 import static com.github.dockerjava.api.model.ExposedPort.tcp;
 import static com.github.dockerjava.api.model.Ports.Binding.bindPort;
 import static com.github.dockerjava.core.DockerClientBuilder.getInstance;
@@ -33,11 +35,16 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
                 .orElseThrow(() -> new IllegalStateException("Test should be ran in a class"))
                 .getAnnotation(Docker.class);
         String imageName = dockerAnnotation.image();
-        ExposedPort innerPort = tcp(dockerAnnotation.ports().inner());
+        Port[] ports = dockerAnnotation.ports();
+        ArrayList<ExposedPort> exposedPorts = new ArrayList<>();
         Ports portBindings = new Ports();
-        portBindings.bind(innerPort, bindPort(dockerAnnotation.ports().exposed()));
+        for (Port port : ports) {
+            ExposedPort innerPort = tcp(port.inner());
+            exposedPorts.add(innerPort);
+            portBindings.bind(innerPort, bindPort(port.exposed()));
+        }
         container = dockerClient.createContainerCmd(imageName)
-                .withExposedPorts(innerPort)
+                .withExposedPorts(exposedPorts)
                 .withPortBindings(portBindings)
                 .exec();
         dockerClient.startContainerCmd(container.getId()).exec();
