@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @Docker(image = "nginx", ports = {@Port(exposed = 8080, inner = 80), @Port(exposed = 8443, inner = 443)})
-public class StartDockerContainerWithMultiplePortsTest {
+public class StartDockerContainerWithMultiplePortsIT {
 
     @Before
     void verifyContainerIsReady() {

@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @Docker(image = "emilevauge/whoami", ports = @Port(exposed = 8801, inner = 80))
-public class StartDockerContainerTest {
+public class StartDockerContainerIT {
 
     @Before
     void verifyContainerIsReady() {

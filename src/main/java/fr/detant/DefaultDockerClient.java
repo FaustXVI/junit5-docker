@@ -12,11 +12,11 @@ import static com.github.dockerjava.api.model.ExposedPort.tcp;
 import static com.github.dockerjava.api.model.Ports.Binding.bindPort;
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
 
-public class DefaultDockerClient implements DockerClientAdapter {
+class DefaultDockerClient implements DockerClientAdapter {
 
     private final DockerClient dockerClient;
 
-    public DefaultDockerClient() {
+    DefaultDockerClient() {
         dockerClient = DockerClientBuilder.getInstance(createDefaultConfigBuilder().withApiVersion("1.22")).build();
     }
 

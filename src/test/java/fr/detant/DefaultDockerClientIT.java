@@ -18,7 +18,7 @@ import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigB
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Default docker client's ")
-public class DefaultDockerClientTest {
+public class DefaultDockerClientIT {
 
     private static final String WANTED_IMAGE = "emilevauge/whoami";
 

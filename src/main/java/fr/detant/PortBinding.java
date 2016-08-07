@@ -2,13 +2,13 @@ package fr.detant;
 
 import java.util.Objects;
 
-public class PortBinding {
+class PortBinding {
 
-    public final int exposed;
+    final int exposed;
 
-    public final int inner;
+    final int inner;
 
-    public PortBinding(int exposed, int inner) {
+    PortBinding(int exposed, int inner) {
         this.exposed = exposed;
         this.inner = inner;
     }

@@ -14,7 +14,7 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
         this(new DefaultDockerClient());
     }
 
-    public DockerExtension(DockerClientAdapter dockerClient) {
+    DockerExtension(DockerClientAdapter dockerClient) {
         this.dockerClient = dockerClient;
     }
 
