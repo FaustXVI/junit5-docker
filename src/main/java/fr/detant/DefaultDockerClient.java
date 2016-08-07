@@ -22,6 +22,9 @@ class DefaultDockerClient implements DockerClientAdapter {
 
     @Override
     public String startContainer(String wantedImage, PortBinding... portBinding) {
+        if(!wantedImage.contains(":")){
+            wantedImage += ":latest";
+        }
         this.ensureImageExists(wantedImage);
         Ports bindings = new Ports();
         for (PortBinding binding : portBinding) {

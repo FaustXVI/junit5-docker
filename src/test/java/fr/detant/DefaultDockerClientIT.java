@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Default docker client's ")
 public class DefaultDockerClientIT {
 
-    private static final String WANTED_IMAGE = "emilevauge/whoami";
+    private static final String WANTED_IMAGE = "emilevauge/whoami:latest";
 
     private DefaultDockerClient defaultDockerClient = new DefaultDockerClient();
 
@@ -91,6 +91,31 @@ public class DefaultDockerClientIT {
                 assertEquals(containers.size() + 1, dockerClient.listContainersCmd().exec().size());
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 assertEquals(WANTED_IMAGE, startedContainer.getConfig().getImage());
+            }
+        }
+
+        @Nested
+        @DisplayName("with a bug in docker-java should")
+        class WithABugInDockerJava {
+
+            @BeforeEach
+            public void ensureContainerIsNotPresent() {
+                try {
+                    String imageToRemove = dockerClient.inspectImageCmd("nginx:latest").exec().getId();
+                    dockerClient.removeImageCmd(imageToRemove).exec();
+                } catch (NotFoundException e) {
+                    // not found, no problems
+                }
+            }
+
+            @Test
+            @DisplayName("add latest to the image name if none is given")
+            public void shouldStartLatestContainer() {
+                String containerId = defaultDockerClient.startContainer("nginx");
+                List<Container> currentContainers = dockerClient.listContainersCmd().exec();
+                assertEquals(containers.size() + 1, currentContainers.size());
+                InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
+                assertEquals("nginx:latest", startedContainer.getConfig().getImage());
             }
         }
     }
