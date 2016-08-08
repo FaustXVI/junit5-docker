@@ -1,4 +1,4 @@
-package fr.detant;
+package com.github.junit5docker;
 
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext;

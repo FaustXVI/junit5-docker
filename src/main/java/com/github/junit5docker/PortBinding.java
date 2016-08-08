@@ -1,4 +1,4 @@
-package fr.detant;
+package com.github.junit5docker;
 
 import java.util.Objects;
 

@@ -1,4 +1,4 @@
-package fr.detant;
+package com.github.junit5docker;
 
 interface DockerClientAdapter {
     String startContainer(String wantedImage, PortBinding... portBinding);

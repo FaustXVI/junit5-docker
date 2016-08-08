@@ -1,4 +1,4 @@
-package fr.detant;
+package com.github.junit5docker;
 
 import org.junit.After;
 import org.junit.Before;

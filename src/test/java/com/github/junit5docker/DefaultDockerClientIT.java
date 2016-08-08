@@ -1,4 +1,4 @@
-package fr.detant;
+package com.github.junit5docker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectContainerResponse;
