@@ -10,7 +10,7 @@ import java.net.Socket;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Docker(image = "emilevauge/whoami", ports = @Port(exposed = 8801, inner = 80))
+@Docker(image = "faustxvi/simple-two-ports", ports = @Port(exposed = 8801, inner = 8080))
 public class StartDockerContainerIT {
 
     @Before

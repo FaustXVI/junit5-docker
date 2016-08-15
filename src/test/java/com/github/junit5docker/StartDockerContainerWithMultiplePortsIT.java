@@ -10,7 +10,8 @@ import java.net.Socket;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Docker(image = "nginx", ports = {@Port(exposed = 8080, inner = 80), @Port(exposed = 8443, inner = 443)})
+@Docker(image = "faustxvi/simple-two-ports", ports = {@Port(exposed = 8080, inner = 8080), @Port(exposed = 8443, inner =
+        8081)})
 public class StartDockerContainerWithMultiplePortsIT {
 
     @Before
