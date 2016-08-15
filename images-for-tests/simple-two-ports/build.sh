@@ -7,5 +7,11 @@ docker run -v $(pwd):/go \
     go build -a --installsuffix cgo --ldflags="-s" -o ./hello
 
 docker build -t faustxvi/simple-two-ports .
-
 docker push faustxvi/simple-two-ports
+
+docker build -t faustxvi/simple-two-ports:wrong-one - <<EOF
+FROM scratch
+LABEL is=wrong
+EOF
+
+docker push faustxvi/simple-two-ports:wrong-one
