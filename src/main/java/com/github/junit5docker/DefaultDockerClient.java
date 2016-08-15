@@ -1,16 +1,19 @@
 package com.github.junit5docker;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 
+import java.util.List;
+import java.util.Map;
+
 import static com.github.dockerjava.api.model.ExposedPort.tcp;
 import static com.github.dockerjava.api.model.Ports.Binding.bindPort;
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
+import static java.util.stream.Collectors.toList;
 
 class DefaultDockerClient implements DockerClientAdapter {
 
@@ -21,27 +24,46 @@ class DefaultDockerClient implements DockerClientAdapter {
     }
 
     @Override
-    public String startContainer(String wantedImage, PortBinding... portBinding) {
-        if(!wantedImage.contains(":")){
-            wantedImage += ":latest";
-        }
-        this.ensureImageExists(wantedImage);
-        Ports bindings = new Ports();
-        for (PortBinding binding : portBinding) {
-            ExposedPort inner = tcp(binding.inner);
-            bindings.bind(inner, bindPort(binding.exposed));
-        }
-        CreateContainerResponse containerResponse = dockerClient.createContainerCmd(wantedImage)
-                .withPortBindings(bindings)
-                .exec();
-        dockerClient.startContainerCmd(containerResponse.getId()).exec();
-        return containerResponse.getId();
+    public String startContainer(String wantedImage, Map<String, String> environment, PortBinding... portBinding) {
+        Ports bindings = createPortBindings(portBinding);
+        List<String> environmentStrings = createEnvironmentList(environment);
+        String containerId = createContainer(wantedImage, bindings, environmentStrings);
+        dockerClient.startContainerCmd(containerId).exec();
+        return containerId;
     }
 
     @Override
     public void stopAndRemoveContainer(String containerId) {
         dockerClient.stopContainerCmd(containerId).exec();
         dockerClient.removeContainerCmd(containerId).exec();
+    }
+
+    private String createContainer(String wantedImage, Ports bindings, List<String> environmentStrings) {
+        if (!wantedImage.contains(":")) {
+            wantedImage += ":latest";
+        }
+        this.ensureImageExists(wantedImage);
+        return dockerClient.createContainerCmd(wantedImage)
+                .withEnv(environmentStrings)
+                .withPortBindings(bindings)
+                .exec().getId();
+    }
+
+    private List<String> createEnvironmentList(Map<String, String> environment) {
+        return environment.entrySet().stream().map(this::toEnvString).collect(toList());
+    }
+
+    private Ports createPortBindings(PortBinding[] portBinding) {
+        Ports bindings = new Ports();
+        for (PortBinding binding : portBinding) {
+            ExposedPort inner = tcp(binding.inner);
+            bindings.bind(inner, bindPort(binding.exposed));
+        }
+        return bindings;
+    }
+
+    private String toEnvString(Map.Entry<String, String> environmentEntry) {
+        return environmentEntry.getKey() + "=" + environmentEntry.getValue();
     }
 
     private void ensureImageExists(String wantedImage) {

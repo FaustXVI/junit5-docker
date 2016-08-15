@@ -4,7 +4,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.verify;
 
 public class DockerExtensionTest {
 
@@ -19,15 +27,28 @@ public class DockerExtensionTest {
         public void startContainerWithOnePort() throws Exception {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OnePortTest.class);
             dockerExtension.beforeAll(context);
-            Mockito.verify(dockerClient).startContainer("wantedImage", new PortBinding(8801, 8800));
+            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), eq(new PortBinding(8801, 8800)));
         }
 
         @Test
         public void startContainerWithMultiplePorts() throws Exception {
             ContainerExtensionContext context = new FakeContainerExtensionContext(MultiplePortTest.class);
             dockerExtension.beforeAll(context);
-            Mockito.verify(dockerClient).startContainer("wantedImage", new PortBinding(8801, 8800), new PortBinding(9901,
-                    9900));
+            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), eq(new PortBinding(8801, 8800)),
+                    eq(new PortBinding(9901, 9900)));
+        }
+
+        @Test
+        public void startContainerWithEnvironmentVariables() throws Exception {
+            ContainerExtensionContext context = new FakeContainerExtensionContext(OneEnvironmentTest.class);
+            dockerExtension.beforeAll(context);
+            ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+            verify(dockerClient).startContainer(eq("wantedImage"),
+                    mapArgumentCaptor.<String, String>capture(), any(PortBinding[].class));
+            Map<String,String> environment = mapArgumentCaptor.getValue();
+            assertEquals(1,environment.size());
+            assertTrue(environment.containsKey("toTest"));
+            assertEquals("myValue",environment.get("toTest"));
         }
     }
 
@@ -38,8 +59,9 @@ public class DockerExtensionTest {
 
         @BeforeEach
         public void callBefore() throws Exception {
-            Mockito.when(dockerClient.startContainer(Mockito.anyString(), Mockito.any(PortBinding[].class)))
-            .thenReturn(CONTAINER_ID);
+            Mockito.when(dockerClient.startContainer(Mockito.anyString(), Mockito.<String, String>anyMap(),
+                    any(PortBinding[].class)))
+                    .thenReturn(CONTAINER_ID);
             dockerExtension.beforeAll(new FakeContainerExtensionContext(OnePortTest.class));
         }
 
@@ -47,7 +69,7 @@ public class DockerExtensionTest {
         public void stopContainer() throws Exception {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OnePortTest.class);
             dockerExtension.afterAll(context);
-            Mockito.verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
+            verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
         }
     }
 
@@ -57,5 +79,10 @@ public class DockerExtensionTest {
 
     @Docker(image = "wantedImage", ports = {@Port(exposed = 8801, inner = 8800), @Port(exposed = 9901, inner = 9900)})
     private static class MultiplePortTest {
+    }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
+            environments = @Environment(key = "toTest", value = "myValue"))
+    private static class OneEnvironmentTest {
     }
 }

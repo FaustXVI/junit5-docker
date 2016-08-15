@@ -10,17 +10,18 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import org.junit.jupiter.api.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
+import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Default docker client's ")
 public class DefaultDockerClientIT {
 
-    private static final String WANTED_IMAGE = "emilevauge/whoami:latest";
+    private static final String WANTED_IMAGE = "faustxvi/simple-two-ports:latest";
+
+    public static final int DEFAULT_DOCKER_ENV_NUMBER = 1;
 
     private DefaultDockerClient defaultDockerClient = new DefaultDockerClient();
 
@@ -49,7 +50,7 @@ public class DefaultDockerClientIT {
             @Test
             @DisplayName("start a container without ports")
             public void shouldStartContainer() {
-                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE);
+                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap());
                 assertEquals(containers.size() + 1, dockerClient.listContainersCmd().exec().size());
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 assertEquals(WANTED_IMAGE, startedContainer.getConfig().getImage());
@@ -58,15 +59,30 @@ public class DefaultDockerClientIT {
             @Test
             @DisplayName("start a container with one port")
             public void shouldStartContainerWithOnePort() {
-                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, new PortBinding(8080, 80));
+                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap(), new PortBinding
+                        (8081, 8080));
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 Ports ports = startedContainer.getHostConfig().getPortBindings();
                 assertNotNull(ports);
                 Map<ExposedPort, Ports.Binding[]> portBindings = ports.getBindings();
                 assertEquals(1, portBindings.size());
-                assertEquals(80, new ArrayList<>(portBindings.keySet()).get(0).getPort());
-                assertEquals(1, portBindings.get(new ExposedPort(80)).length);
-                assertEquals("8080", portBindings.get(new ExposedPort(80))[0].getHostPortSpec());
+                assertEquals(8080, new ArrayList<>(portBindings.keySet()).get(0).getPort());
+                assertEquals(1, portBindings.get(new ExposedPort(8080)).length);
+                assertEquals("8081", portBindings.get(new ExposedPort(8080))[0].getHostPortSpec());
+            }
+
+            @Test
+            @DisplayName("start a container with environment variables >:)")
+            public void shouldStartContainerWithEnvironmentVariables() {
+                Map<String, String> environments = new HashMap<>();
+                environments.put("khaled", "souf");
+                environments.put("abdellah", "stagiaire");
+                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, environments);
+                InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
+                List<String> envs = Arrays.asList(startedContainer.getConfig().getEnv());
+                assertEquals(2 + DEFAULT_DOCKER_ENV_NUMBER, envs.size());
+                assertTrue(envs.contains("khaled=souf"));
+                assertTrue(envs.contains("abdellah=stagiaire"));
             }
         }
 
@@ -87,35 +103,25 @@ public class DefaultDockerClientIT {
             @Test
             @DisplayName("start a container after pulling the image")
             public void shouldStartContainer() {
-                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE);
+                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap());
                 assertEquals(containers.size() + 1, dockerClient.listContainersCmd().exec().size());
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 assertEquals(WANTED_IMAGE, startedContainer.getConfig().getImage());
             }
-        }
 
-        @Nested
-        @DisplayName("with a bug in docker-java should")
-        class WithABugInDockerJava {
+            @Nested
+            @DisplayName("with a bug in docker-java should")
+            class WithABugInDockerJava {
 
-            @BeforeEach
-            public void ensureContainerIsNotPresent() {
-                try {
-                    String imageToRemove = dockerClient.inspectImageCmd("nginx:latest").exec().getId();
-                    dockerClient.removeImageCmd(imageToRemove).exec();
-                } catch (NotFoundException e) {
-                    // not found, no problems
+                @Test
+                @DisplayName("add latest to the image name if none is given")
+                public void shouldStartLatestContainer() {
+                    String containerId = defaultDockerClient.startContainer("faustxvi/simple-two-ports", emptyMap());
+                    List<Container> currentContainers = dockerClient.listContainersCmd().exec();
+                    assertEquals(containers.size() + 1, currentContainers.size());
+                    InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
+                    assertEquals(WANTED_IMAGE, startedContainer.getConfig().getImage());
                 }
-            }
-
-            @Test
-            @DisplayName("add latest to the image name if none is given")
-            public void shouldStartLatestContainer() {
-                String containerId = defaultDockerClient.startContainer("nginx");
-                List<Container> currentContainers = dockerClient.listContainersCmd().exec();
-                assertEquals(containers.size() + 1, currentContainers.size());
-                InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
-                assertEquals("nginx:latest", startedContainer.getConfig().getImage());
             }
         }
     }
