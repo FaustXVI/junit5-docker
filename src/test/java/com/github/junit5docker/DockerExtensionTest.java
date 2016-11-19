@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
+import static com.github.junit5docker.FakeLog.fakeLog;
 import static com.github.junit5docker.WaitFor.NOTHING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -76,10 +77,20 @@ public class DockerExtensionTest {
 
         @Test
         public void timeoutIfLogDoesNotAppear() throws Exception {
-            expectThrows(AssertionError.class, () -> {
+            AssertionError error = expectThrows(AssertionError.class, () -> {
                 ContainerExtensionContext context = new FakeContainerExtensionContext(TimeoutTest.class);
                 sendLogAndTimeExecution(1, TimeUnit.SECONDS, () -> dockerExtension.beforeAll(context));
             });
+            assertThat(error.getMessage()).containsIgnoringCase("timeout");
+        }
+
+        @Test
+        public void throwsExceptionIfLogNotFoundAndLogsEnded() throws Exception {
+            AssertionError error = expectThrows(AssertionError.class, () -> {
+                ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNotPresentLogTest.class);
+                sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
+            });
+            assertThat(error.getMessage()).containsIgnoringCase("not found");
         }
 
         private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws InterruptedException {
@@ -97,10 +108,8 @@ public class DockerExtensionTest {
 
         private void sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
             AtomicBoolean started = new AtomicBoolean(false);
-            when(dockerClient.logs(anyString())).thenReturn(Stream.generate(() -> {
-                if (started.get()) return "19/11/2016 : " + WAITED_LOG;
-                return "";
-            }));
+            Stream<String> logStream = fakeLog(started, WAITED_LOG);
+            when(dockerClient.logs(anyString())).thenReturn(logStream);
             executor.submit(() -> {
                 try {
                     timeUnit.sleep(waitingTime);
@@ -171,5 +180,10 @@ public class DockerExtensionTest {
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
             waitFor = @WaitFor(value = NOTHING, timeoutInMillis = 10))
     private static class WaitForNothingTest {
+    }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
+            waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 200))
+    private static class WaitForNotPresentLogTest {
     }
 }

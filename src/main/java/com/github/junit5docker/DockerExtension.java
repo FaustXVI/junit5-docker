@@ -5,9 +5,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
@@ -38,22 +36,27 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
         String expectedLog = waitFor.value();
         if (!WaitFor.NOTHING.equals(expectedLog)) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.submit(findFirstLogContaining(expectedLog));
+            Future<Boolean> booleanFuture = executor.submit(findFirstLogContaining(expectedLog));
             executor.shutdown();
             try {
                 boolean termination = executor.awaitTermination(waitFor.timeoutInMillis(), TimeUnit.MILLISECONDS);
                 if (!termination) {
                     throw new AssertionError("Timeout while waiting for log : \"" + expectedLog + "\"");
                 }
+                if (!booleanFuture.get()) {
+                    throw new AssertionError("\"" + expectedLog + "\" not found in logs and container stopped");
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+                throw new AssertionError("Should never append : probably a junit-docker bug", e);
             }
         }
     }
 
-    private Runnable findFirstLogContaining(String logToFind) {
+    private Callable<Boolean> findFirstLogContaining(String logToFind) {
         return () -> dockerClient.logs(containerID).filter(log -> log.contains(logToFind))
-                .findFirst();
+                .findFirst().isPresent();
     }
 
     private Docker findDockerAnnotation(ContainerExtensionContext containerExtensionContext) {
