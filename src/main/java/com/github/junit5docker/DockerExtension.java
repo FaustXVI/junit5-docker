@@ -36,16 +36,18 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
     private void waitForLogAccordingTo(WaitFor waitFor) {
         String expectedLog = waitFor.value();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(findFirstLogContaining(expectedLog));
-        executor.shutdown();
-        try {
-            boolean termination = executor.awaitTermination(waitFor.timeoutInMillis(), TimeUnit.MILLISECONDS);
-            if (!termination) {
-                throw new AssertionError("Timeout while waiting for log : \"" + expectedLog + "\"");
+        if (!WaitFor.NOTHING.equals(expectedLog)) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.submit(findFirstLogContaining(expectedLog));
+            executor.shutdown();
+            try {
+                boolean termination = executor.awaitTermination(waitFor.timeoutInMillis(), TimeUnit.MILLISECONDS);
+                if (!termination) {
+                    throw new AssertionError("Timeout while waiting for log : \"" + expectedLog + "\"");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
     }
 

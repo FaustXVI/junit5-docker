@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
+import static com.github.junit5docker.WaitFor.NOTHING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,6 +58,20 @@ public class DockerExtensionTest {
                     .overridingErrorMessage("Should have waited for log to appear during %d ms but waited %d ms", 100,
                             duration)
                     .isGreaterThanOrEqualTo(100);
+        }
+
+        @Test
+        public void notWaitByDefault() throws Exception {
+            ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNothingTest.class);
+            when(dockerClient.logs(anyString())).thenReturn(Stream.generate(() -> {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                    throw new AssertionError("Stop interrupting meee !");
+                }
+                return null;
+            }));
+            dockerExtension.beforeAll(context);
         }
 
         @Test
@@ -151,5 +166,10 @@ public class DockerExtensionTest {
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
             waitFor = @WaitFor(value = WAITED_LOG, timeoutInMillis = 10))
     private static class TimeoutTest {
+    }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
+            waitFor = @WaitFor(value = NOTHING, timeoutInMillis = 10))
+    private static class WaitForNothingTest {
     }
 }
