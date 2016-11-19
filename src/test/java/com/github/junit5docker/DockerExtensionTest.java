@@ -8,15 +8,26 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 public class DockerExtensionTest {
 
-    private DockerClientAdapter dockerClient = Mockito.mock(DockerClientAdapter.class);
+    static final String WAITED_LOG = "started";
+
+    private DockerClientAdapter dockerClient = mock(DockerClientAdapter.class);
 
     private DockerExtension dockerExtension = new DockerExtension(dockerClient);
 
@@ -39,16 +50,55 @@ public class DockerExtensionTest {
         }
 
         @Test
+        public void waitForLogToAppear() throws Exception {
+            ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForLogTest.class);
+            long duration = sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
+            assertThat(duration)
+                    .overridingErrorMessage("Should have waited for log to appear during %d ms but waited %d ms", 100,
+                            duration)
+                    .isGreaterThanOrEqualTo(100);
+        }
+
+        private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws InterruptedException {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            long callTime = System.currentTimeMillis();
+            sendLogAfter(waitingTime, timeUnit, executor);
+            runnable.run();
+            long duration = System.currentTimeMillis() - callTime;
+            executor.shutdown();
+            if (!executor.awaitTermination(waitingTime * 2, timeUnit)) {
+                fail("execution should have finished");
+            }
+            return duration;
+        }
+
+        private void sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
+            AtomicBoolean started = new AtomicBoolean(false);
+            when(dockerClient.logs()).thenReturn(Stream.generate(() -> {
+                if (started.get()) return WAITED_LOG;
+                return "";
+            }));
+            executor.submit(() -> {
+                try {
+                    timeUnit.sleep(waitingTime);
+                    started.set(true);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+        }
+
+        @Test
         public void startContainerWithEnvironmentVariables() throws Exception {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OneEnvironmentTest.class);
             dockerExtension.beforeAll(context);
             ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
             verify(dockerClient).startContainer(eq("wantedImage"),
                     mapArgumentCaptor.<String, String>capture(), any(PortBinding[].class));
-            Map<String,String> environment = mapArgumentCaptor.getValue();
-            assertEquals(1,environment.size());
+            Map<String, String> environment = mapArgumentCaptor.getValue();
+            assertEquals(1, environment.size());
             assertTrue(environment.containsKey("toTest"));
-            assertEquals("myValue",environment.get("toTest"));
+            assertEquals("myValue", environment.get("toTest"));
         }
     }
 
@@ -59,7 +109,7 @@ public class DockerExtensionTest {
 
         @BeforeEach
         public void callBefore() throws Exception {
-            Mockito.when(dockerClient.startContainer(Mockito.anyString(), Mockito.<String, String>anyMap(),
+            when(dockerClient.startContainer(Mockito.anyString(), Mockito.<String, String>anyMap(),
                     any(PortBinding[].class)))
                     .thenReturn(CONTAINER_ID);
             dockerExtension.beforeAll(new FakeContainerExtensionContext(OnePortTest.class));
@@ -84,5 +134,9 @@ public class DockerExtensionTest {
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
             environments = @Environment(key = "toTest", value = "myValue"))
     private static class OneEnvironmentTest {
+    }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800), waitFor = @WaitFor(WAITED_LOG))
+    private static class WaitForLogTest {
     }
 }
