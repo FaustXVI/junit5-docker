@@ -73,7 +73,7 @@ public class DockerExtensionTest {
         private void sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
             AtomicBoolean started = new AtomicBoolean(false);
             when(dockerClient.logs(anyString())).thenReturn(Stream.generate(() -> {
-                if (started.get()) return WAITED_LOG;
+                if (started.get()) return "19/11/2016 : " + WAITED_LOG;
                 return "";
             }));
             executor.submit(() -> {

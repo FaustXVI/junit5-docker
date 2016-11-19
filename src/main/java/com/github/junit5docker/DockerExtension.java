@@ -29,7 +29,7 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
         WaitFor waitFor = dockerAnnotation.waitFor();
         containerID = dockerClient.startContainer(imageReference, environmentMap, portBindings);
         if (!WaitFor.NOTHING.equals(waitFor.value())) {
-            dockerClient.logs(containerID).peek(System.out::println).filter(log -> log.contains(waitFor.value()))
+            dockerClient.logs(containerID).filter(log -> log.contains(waitFor.value()))
                     .findFirst();
         }
     }
