@@ -10,10 +10,14 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import org.junit.jupiter.api.*;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
+import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -144,6 +148,7 @@ public class DefaultDockerClientIT {
         }
 
         @Test
+        @DisplayName("should remove the container")
         public void shouldRemoveTheContainer() {
             defaultDockerClient.stopAndRemoveContainer(containerID);
             assertEquals(containers.size(), dockerClient.listContainersCmd().exec().size());
@@ -154,25 +159,86 @@ public class DefaultDockerClientIT {
     @Nested
     @DisplayName("log method")
     class LogMethod {
-        private static final String WANTED_IMAGE = "faustxvi/open-port-later";
 
-        private String containerID;
+        @Nested
+        @DisplayName("with a working image")
+        class WithAWorkingImage {
+            private static final String WANTED_IMAGE = "faustxvi/open-port-later";
 
-        @BeforeEach
-        public void startAContainer() {
-            ensureImageExists(WANTED_IMAGE);
-            containerID = dockerClient.createContainerCmd(WANTED_IMAGE).withEnv(singletonList("WAITING_TIME=1ms"))
-                    .exec()
-                    .getId();
-            dockerClient.startContainerCmd(containerID).exec();
+            private String containerID;
+
+            @BeforeEach
+            public void startAContainer() {
+                ensureImageExists(WANTED_IMAGE);
+            }
+
+            @Test
+            public void shouldGiveLogsInStream() {
+                startContainerWithWaitingTimeAt("1ms");
+                Stream<String> logs = defaultDockerClient.logs(containerID);
+                Optional<String> firstLine = logs.findFirst();
+                assertTrue(firstLine.isPresent());
+                assertThat(firstLine.get()).contains("started");
+            }
+
+            @Test
+            @DisplayName("should close stream if interrupted")
+            public void shouldCloseIfInterrupted() {
+                startContainerWithWaitingTimeAt("1s");
+                ExecutorService executorService = interruptIn(100, TimeUnit.MILLISECONDS, currentThread());
+                try {
+                    Stream<String> logs = defaultDockerClient.logs(containerID);
+                    Optional<String> notFoundLine = logs.filter((l) -> false).findFirst();
+                    Thread.interrupted();
+                    assertFalse(notFoundLine.isPresent());
+                } finally {
+                    executorService.shutdown();
+                }
+            }
+
+            private void startContainerWithWaitingTimeAt(String duration) {
+                containerID = dockerClient.createContainerCmd(WANTED_IMAGE).withEnv(singletonList("WAITING_TIME=" + duration))
+                        .exec()
+                        .getId();
+                dockerClient.startContainerCmd(containerID).exec();
+            }
         }
 
-        @Test
-        public void shouldGiveLogsInStream() {
-            Stream<String> logs = defaultDockerClient.logs(containerID);
-            Optional<String> firstLine = logs.findFirst();
-            assertTrue(firstLine.isPresent());
-            assertThat(firstLine.get()).contains("started");
+        @Nested
+        @DisplayName("with a buggy image")
+        class WithABuggyImage {
+
+            private static final String WANTED_IMAGE = "faustxvi/log-and-quit";
+
+            private String containerID;
+
+            @BeforeEach
+            public void startAContainer() {
+                ensureImageExists(WANTED_IMAGE);
+                containerID = dockerClient.createContainerCmd(WANTED_IMAGE)
+                        .exec()
+                        .getId();
+                dockerClient.startContainerCmd(containerID).exec();
+            }
+
+            @Test
+            @DisplayName("should close stream when logs finish")
+            public void shouldCloseIfInterrupted() {
+                Stream<String> logs = defaultDockerClient.logs(containerID);
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<Boolean> lineFound = executor
+                        .submit(() -> logs.filter((l) -> false).findFirst().isPresent());
+                try {
+                    assertFalse(lineFound.get(500, TimeUnit.MILLISECONDS));
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    StringWriter out = new StringWriter();
+                    e.printStackTrace(new PrintWriter(out));
+                    String stack = out.toString();
+                    fail("Log stream should have been close but reading the logs didn't ended.\nException : " + stack);
+                } finally {
+                    executor.shutdown();
+                }
+            }
         }
     }
 
@@ -192,5 +258,18 @@ public class DefaultDockerClientIT {
         } catch (NotFoundException e) {
             dockerClient.pullImageCmd(wantedImage).exec(new PullImageResultCallback()).awaitSuccess();
         }
+    }
+
+    private ExecutorService interruptIn(int timeout, TimeUnit timeUnit, Thread thread) {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.submit(() -> {
+            try {
+                timeUnit.sleep(timeout);
+                thread.interrupt();
+            } catch (InterruptedException e) {
+                thread.interrupt();
+            }
+        });
+        return executorService;
     }
 }
