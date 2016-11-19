@@ -18,9 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 public class DockerExtensionTest {
@@ -74,7 +72,7 @@ public class DockerExtensionTest {
 
         private void sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
             AtomicBoolean started = new AtomicBoolean(false);
-            when(dockerClient.logs()).thenReturn(Stream.generate(() -> {
+            when(dockerClient.logs(anyString())).thenReturn(Stream.generate(() -> {
                 if (started.get()) return WAITED_LOG;
                 return "";
             }));
@@ -109,7 +107,7 @@ public class DockerExtensionTest {
 
         @BeforeEach
         public void callBefore() throws Exception {
-            when(dockerClient.startContainer(Mockito.anyString(), Mockito.<String, String>anyMap(),
+            when(dockerClient.startContainer(anyString(), Mockito.<String, String>anyMap(),
                     any(PortBinding[].class)))
                     .thenReturn(CONTAINER_ID);
             dockerExtension.beforeAll(new FakeContainerExtensionContext(OnePortTest.class));

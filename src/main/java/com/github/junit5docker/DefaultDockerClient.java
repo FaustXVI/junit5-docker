@@ -3,18 +3,22 @@ package com.github.junit5docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.command.LogContainerResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.github.dockerjava.api.model.ExposedPort.tcp;
 import static com.github.dockerjava.api.model.Ports.Binding.bindPort;
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.empty;
 
 class DefaultDockerClient implements DockerClientAdapter {
 
@@ -40,8 +44,12 @@ class DefaultDockerClient implements DockerClientAdapter {
     }
 
     @Override
-    public Stream<String> logs() {
-        return Stream.empty();
+    public Stream<String> logs(String containerID) {
+        return dockerClient.logContainerCmd(containerID).withFollowStream(true)
+                .withStdOut(true)
+                .withStdErr(true)
+                .exec(new StreamLog())
+                .stream();
     }
 
     private String createContainer(String wantedImage, Ports bindings, List<String> environmentStrings) {
@@ -77,6 +85,28 @@ class DefaultDockerClient implements DockerClientAdapter {
             dockerClient.inspectImageCmd(wantedImage).exec();
         } catch (NotFoundException e) {
             dockerClient.pullImageCmd(wantedImage).exec(new PullImageResultCallback()).awaitSuccess();
+        }
+    }
+
+    private static class StreamLog extends LogContainerResultCallback {
+
+        private String line;
+
+        @Override
+        public void onNext(Frame item) {
+            line = new String(item.getPayload());
+        }
+
+        public Stream<String> stream() {
+            while (line == null) {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(10);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return empty();
+                }
+            }
+            return Stream.generate(() -> line);
         }
     }
 }

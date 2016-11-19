@@ -5,7 +5,6 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 
 import java.util.HashMap;
-import java.util.stream.Stream;
 
 public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
@@ -30,8 +29,8 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
         WaitFor waitFor = dockerAnnotation.waitFor();
         containerID = dockerClient.startContainer(imageReference, environmentMap, portBindings);
         if (!WaitFor.NOTHING.equals(waitFor.value())) {
-            Stream<String> logs = dockerClient.logs();
-            logs.filter(log -> log.equals(waitFor.value())).findFirst();
+            dockerClient.logs(containerID).peek(System.out::println).filter(log -> log.contains(waitFor.value()))
+                    .findFirst();
         }
     }
 

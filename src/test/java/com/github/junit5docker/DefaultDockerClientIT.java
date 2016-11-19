@@ -11,15 +11,16 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Default docker client's ")
 public class DefaultDockerClientIT {
-
-    private static final String WANTED_IMAGE = "faustxvi/simple-two-ports:latest";
 
     public static final int DEFAULT_DOCKER_ENV_NUMBER = 1;
 
@@ -41,10 +42,11 @@ public class DefaultDockerClientIT {
         @Nested
         @DisplayName("with image already pulled should")
         class WithImageAlreadyPulled {
+            private static final String WANTED_IMAGE = "faustxvi/simple-two-ports:latest";
 
             @BeforeEach
             public void ensureImageIsPulled() {
-                ensureImageExists();
+                ensureImageExists(WANTED_IMAGE);
             }
 
             @Test
@@ -89,6 +91,7 @@ public class DefaultDockerClientIT {
         @Nested
         @DisplayName("with image not pulled should")
         class WithImageNotPulled {
+            private static final String WANTED_IMAGE = "faustxvi/simple-two-ports:latest";
 
             @BeforeEach
             public void ensureContainerIsNotPresent() {
@@ -129,12 +132,13 @@ public class DefaultDockerClientIT {
     @Nested
     @DisplayName("stopAndRemove method")
     class StopAndRemoveContainerMethod {
+        private static final String WANTED_IMAGE = "faustxvi/simple-two-ports:latest";
 
         private String containerID;
 
         @BeforeEach
         public void startAContainer() {
-            ensureImageExists();
+            ensureImageExists(WANTED_IMAGE);
             containerID = dockerClient.createContainerCmd(WANTED_IMAGE).exec().getId();
             dockerClient.startContainerCmd(containerID).exec();
         }
@@ -144,6 +148,31 @@ public class DefaultDockerClientIT {
             defaultDockerClient.stopAndRemoveContainer(containerID);
             assertEquals(containers.size(), dockerClient.listContainersCmd().exec().size());
             assertThrows(NotFoundException.class, () -> dockerClient.inspectContainerCmd(containerID).exec());
+        }
+    }
+
+    @Nested
+    @DisplayName("log method")
+    class LogMethod {
+        private static final String WANTED_IMAGE = "faustxvi/open-port-later";
+
+        private String containerID;
+
+        @BeforeEach
+        public void startAContainer() {
+            ensureImageExists(WANTED_IMAGE);
+            containerID = dockerClient.createContainerCmd(WANTED_IMAGE).withEnv(singletonList("WAITING_TIME=1ms"))
+                    .exec()
+                    .getId();
+            dockerClient.startContainerCmd(containerID).exec();
+        }
+
+        @Test
+        public void shouldGiveLogsInStream() {
+            Stream<String> logs = defaultDockerClient.logs(containerID);
+            Optional<String> firstLine = logs.findFirst();
+            assertTrue(firstLine.isPresent());
+            assertThat(firstLine.get()).contains("started");
         }
     }
 
@@ -157,11 +186,11 @@ public class DefaultDockerClientIT {
                 });
     }
 
-    private void ensureImageExists() {
+    private void ensureImageExists(String wantedImage) {
         try {
-            dockerClient.inspectImageCmd(WANTED_IMAGE).exec();
+            dockerClient.inspectImageCmd(wantedImage).exec();
         } catch (NotFoundException e) {
-            dockerClient.pullImageCmd(WANTED_IMAGE).exec(new PullImageResultCallback()).awaitSuccess();
+            dockerClient.pullImageCmd(wantedImage).exec(new PullImageResultCallback()).awaitSuccess();
         }
     }
 }
