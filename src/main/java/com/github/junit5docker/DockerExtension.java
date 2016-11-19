@@ -5,6 +5,9 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
@@ -21,17 +24,34 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     @Override
-    public void beforeAll(ContainerExtensionContext containerExtensionContext)  {
+    public void beforeAll(ContainerExtensionContext containerExtensionContext) {
         Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
         PortBinding[] portBindings = createPortBindings(dockerAnnotation);
         HashMap<String, String> environmentMap = createEnvironmentMap(dockerAnnotation);
         String imageReference = findImageName(dockerAnnotation);
         WaitFor waitFor = dockerAnnotation.waitFor();
         containerID = dockerClient.startContainer(imageReference, environmentMap, portBindings);
-        if (!WaitFor.NOTHING.equals(waitFor.value())) {
-            dockerClient.logs(containerID).filter(log -> log.contains(waitFor.value()))
-                    .findFirst();
+        waitForLogAccordingTo(waitFor);
+    }
+
+    private void waitForLogAccordingTo(WaitFor waitFor) {
+        String expectedLog = waitFor.value();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(findFirstLogContaining(expectedLog));
+        executor.shutdown();
+        try {
+            boolean termination = executor.awaitTermination(waitFor.timeoutInMillis(), TimeUnit.MILLISECONDS);
+            if (!termination) {
+                throw new AssertionError("Timeout while waiting for log : \"" + expectedLog + "\"");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
+    }
+
+    private Runnable findFirstLogContaining(String logToFind) {
+        return () -> dockerClient.logs(containerID).filter(log -> log.contains(logToFind))
+                .findFirst();
     }
 
     private Docker findDockerAnnotation(ContainerExtensionContext containerExtensionContext) {

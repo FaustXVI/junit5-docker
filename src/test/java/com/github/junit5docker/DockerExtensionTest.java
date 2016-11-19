@@ -16,9 +16,11 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 public class DockerExtensionTest {
@@ -55,6 +57,14 @@ public class DockerExtensionTest {
                     .overridingErrorMessage("Should have waited for log to appear during %d ms but waited %d ms", 100,
                             duration)
                     .isGreaterThanOrEqualTo(100);
+        }
+
+        @Test
+        public void timeoutIfLogDoesNotAppear() throws Exception {
+            expectThrows(AssertionError.class, () -> {
+                ContainerExtensionContext context = new FakeContainerExtensionContext(TimeoutTest.class);
+                sendLogAndTimeExecution(1, TimeUnit.SECONDS, () -> dockerExtension.beforeAll(context));
+            });
         }
 
         private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws InterruptedException {
@@ -136,5 +146,10 @@ public class DockerExtensionTest {
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800), waitFor = @WaitFor(WAITED_LOG))
     private static class WaitForLogTest {
+    }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
+            waitFor = @WaitFor(value = WAITED_LOG, timeoutInMillis = 10))
+    private static class TimeoutTest {
     }
 }
