@@ -2,7 +2,10 @@ package com.github.junit5docker;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -28,34 +31,45 @@ public class OpenQueueIteratorTest {
     }
 
     @Test
-    public void shouldInterruptIfBooleanPassesToFalse() throws InterruptedException, TimeoutException, ExecutionException {
+    public void shouldInterruptIfBooleanPassesToFalse() throws InterruptedException {
         ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
         AtomicBoolean opened = new AtomicBoolean(true);
+        CountDownLatch hasNextStarted = new CountDownLatch(1);
+        CountDownLatch hasNextReturned = new CountDownLatch(1);
         OpenQueueIterator iterator = new OpenQueueIterator(opened, lines);
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
-        Future<Boolean> hasNext = executor.submit(iterator::hasNext);
-        executor.schedule(() -> opened.set(false), 50, MILLISECONDS);
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        executor.submit(() -> {
+            hasNextStarted.countDown();
+            iterator.hasNext();
+            hasNextReturned.countDown();
+        });
+        hasNextStarted.await();
+        opened.set(false);
+        assertThat(hasNextReturned.await(100, MILLISECONDS))
+                .overridingErrorMessage("hasNext should have returned")
+                .isTrue();
         executor.shutdown();
-        assertThat(executor.awaitTermination(200, MILLISECONDS)).isTrue();
-        assertThat(hasNext.get()).isFalse();
     }
 
     @Test
     public void shouldGiveFirstLineEvenAfterTwoCallToHasNext() throws InterruptedException {
         ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
+        CountDownLatch firstLinePushed = new CountDownLatch(1);
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         executor.submit(() -> {
             try {
                 lines.put("a line");
+                firstLinePushed.countDown();
             } catch (InterruptedException e) {
             }
         });
-        executor.schedule(() -> {
+        executor.submit(() -> {
             try {
+                firstLinePushed.await();
                 lines.put("a line 2");
             } catch (InterruptedException e) {
             }
-        }, 20, MILLISECONDS);
+        });
         OpenQueueIterator iterator = new OpenQueueIterator(new AtomicBoolean(true), lines);
         assertThat(iterator.hasNext()).isTrue();
         assertThat(iterator.hasNext()).isTrue();
@@ -64,8 +78,7 @@ public class OpenQueueIteratorTest {
     }
 
     @Test
-    public void shouldInterruptIfThreadIsInterrupted() throws InterruptedException, TimeoutException,
-            ExecutionException {
+    public void shouldInterruptIfThreadIsInterrupted() throws InterruptedException {
         ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
         AtomicBoolean opened = new AtomicBoolean(true);
         OpenQueueIterator iterator = new OpenQueueIterator(opened, lines);
@@ -74,7 +87,6 @@ public class OpenQueueIteratorTest {
         assertThat(Thread.interrupted()).isTrue();
         assertThat(opened.get()).isFalse();
     }
-
 
     @Test
     public void shouldReadLineOnlyOnce() throws InterruptedException {
