@@ -1,42 +1,43 @@
 package com.github.junit5docker;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.*;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class OpenQueueIteratorTest {
+public class QueueIteratorTest {
+
+    private BlockingQueue<String> lines;
+
+    private QueueIterator iterator;
+
+    @BeforeEach
+    public void createIterater() {
+        lines = new ArrayBlockingQueue<>(1);
+        iterator = new QueueIterator(lines);
+    }
 
     @Test
     public void shouldHaveNothingIfClosed() throws InterruptedException {
-        ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
+        iterator.close();
         lines.put("a line");
-        OpenQueueIterator iterator = new OpenQueueIterator(new AtomicBoolean(false), lines);
         assertThat(iterator.hasNext()).isFalse();
     }
 
     @Test
     public void shouldHaveContentIfDataIsInQueue() throws InterruptedException {
-        ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
         lines.put("a line");
-        OpenQueueIterator iterator = new OpenQueueIterator(new AtomicBoolean(true), lines);
         assertThat(iterator.hasNext()).isTrue();
         assertThat(iterator.next()).isEqualTo("a line");
     }
 
     @Test
-    public void shouldInterruptIfBooleanPassesToFalse() throws InterruptedException {
-        ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
-        AtomicBoolean opened = new AtomicBoolean(true);
+    public void shouldInterruptIfClosedByAnotherThread() throws InterruptedException {
         CountDownLatch hasNextStarted = new CountDownLatch(1);
         CountDownLatch hasNextReturned = new CountDownLatch(1);
-        OpenQueueIterator iterator = new OpenQueueIterator(opened, lines);
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.submit(() -> {
             hasNextStarted.countDown();
@@ -44,7 +45,7 @@ public class OpenQueueIteratorTest {
             hasNextReturned.countDown();
         });
         hasNextStarted.await();
-        opened.set(false);
+        iterator.close();
         assertThat(hasNextReturned.await(100, MILLISECONDS))
                 .overridingErrorMessage("hasNext should have returned")
                 .isTrue();
@@ -53,7 +54,6 @@ public class OpenQueueIteratorTest {
 
     @Test
     public void shouldGiveFirstLineEvenAfterTwoCallToHasNext() throws InterruptedException {
-        ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
         CountDownLatch firstLinePushed = new CountDownLatch(1);
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         executor.submit(() -> {
@@ -70,7 +70,6 @@ public class OpenQueueIteratorTest {
             } catch (InterruptedException e) {
             }
         });
-        OpenQueueIterator iterator = new OpenQueueIterator(new AtomicBoolean(true), lines);
         assertThat(iterator.hasNext()).isTrue();
         assertThat(iterator.hasNext()).isTrue();
         assertThat(iterator.next()).isEqualTo("a line");
@@ -79,24 +78,17 @@ public class OpenQueueIteratorTest {
 
     @Test
     public void shouldInterruptIfThreadIsInterrupted() throws InterruptedException {
-        ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
-        AtomicBoolean opened = new AtomicBoolean(true);
-        OpenQueueIterator iterator = new OpenQueueIterator(opened, lines);
         Thread.currentThread().interrupt();
         assertThat(iterator.hasNext()).isFalse();
         assertThat(Thread.interrupted()).isTrue();
-        assertThat(opened.get()).isFalse();
     }
 
     @Test
     public void shouldReadLineOnlyOnce() throws InterruptedException {
-        AtomicBoolean opened = new AtomicBoolean(true);
-        ArrayBlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
         lines.put("a line");
-        OpenQueueIterator iterator = new OpenQueueIterator(opened, lines);
         iterator.hasNext();
         iterator.next();
-        opened.set(false);
+        iterator.close();
         assertThat(iterator.hasNext()).isFalse();
     }
 }

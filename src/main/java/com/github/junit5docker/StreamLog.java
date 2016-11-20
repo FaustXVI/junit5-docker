@@ -5,7 +5,6 @@ import com.github.dockerjava.core.command.LogContainerResultCallback;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -16,7 +15,7 @@ class StreamLog extends LogContainerResultCallback {
 
     private BlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
 
-    private volatile AtomicBoolean opened = new AtomicBoolean(true);
+    private QueueIterator queueIterator = new QueueIterator(lines);
 
     @Override
     public void onNext(Frame item) {
@@ -30,16 +29,16 @@ class StreamLog extends LogContainerResultCallback {
     @Override
     public void onComplete() {
         super.onComplete();
-        opened.set(false);
+        queueIterator.close();
     }
 
     @Override
     public void onError(Throwable throwable) {
         super.onError(throwable);
-        opened.set(false);
+        queueIterator.close();
     }
 
     public Stream<String> stream() {
-        return StreamSupport.stream(spliteratorUnknownSize(new OpenQueueIterator(opened, lines), 0), false);
+        return StreamSupport.stream(spliteratorUnknownSize(queueIterator, 0), false);
     }
 }

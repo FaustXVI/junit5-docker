@@ -7,15 +7,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.Thread.currentThread;
 
-class OpenQueueIterator implements Iterator<String> {
+class QueueIterator implements Iterator<String>, AutoCloseable {
     private final AtomicBoolean opened;
 
     private final BlockingQueue<String> lines;
 
     private String lineRead;
 
-    public OpenQueueIterator(AtomicBoolean opened, BlockingQueue<String> lines) {
-        this.opened = opened;
+    public QueueIterator(BlockingQueue<String> lines) {
+        this.opened = new AtomicBoolean(true);
         this.lines = lines;
     }
 
@@ -37,5 +37,10 @@ class OpenQueueIterator implements Iterator<String> {
         String lineRead = this.lineRead;
         this.lineRead = null;
         return lineRead;
+    }
+
+    @Override
+    public void close() {
+        opened.set(false);
     }
 }
