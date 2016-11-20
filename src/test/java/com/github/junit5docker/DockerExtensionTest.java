@@ -1,5 +1,6 @@
 package com.github.junit5docker;
 
+import com.github.junit5docker.fakes.FakeContainerExtensionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.ExecutorSanitizer.verifyAssertionError;
-import static com.github.junit5docker.FakeLog.fakeLog;
+import static com.github.junit5docker.fakes.FakeLog.fakeLog;
 import static com.github.junit5docker.WaitFor.NOTHING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;

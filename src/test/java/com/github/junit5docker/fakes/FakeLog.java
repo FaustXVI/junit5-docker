@@ -1,4 +1,4 @@
-package com.github.junit5docker;
+package com.github.junit5docker.fakes;
 
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
-class FakeLog implements Iterator<String> {
+public class FakeLog implements Iterator<String> {
 
     private final AtomicBoolean started;
 
@@ -21,7 +21,7 @@ class FakeLog implements Iterator<String> {
         this.waitedLog = waitedLog;
     }
 
-    static Stream<String> fakeLog(AtomicBoolean started, String waitedLog) {
+    public static Stream<String> fakeLog(AtomicBoolean started, String waitedLog) {
         return stream(spliteratorUnknownSize(new FakeLog(started, waitedLog), 0), false);
     }
 
