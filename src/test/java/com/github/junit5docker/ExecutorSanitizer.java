@@ -1,13 +1,15 @@
 package com.github.junit5docker;
 
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-final class InterruptionIgnorer {
+final class ExecutorSanitizer {
 
     @FunctionalInterface
     interface InterruptibleRunnable {
+
         void run() throws InterruptedException;
     }
 
@@ -38,5 +40,20 @@ final class InterruptionIgnorer {
                 throw new AssertionError("Bug in interruption ignorer");
             }
         };
+    }
+
+    @FunctionalInterface
+    interface ThrowableSupplier<T> {
+        T get() throws Exception;
+    }
+
+    static <T> T verifyAssertionError(ThrowableSupplier<T> o) throws Throwable {
+        try {
+            return o.get();
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof AssertionError)
+                throw e.getCause();
+            else throw e;
+        }
     }
 }

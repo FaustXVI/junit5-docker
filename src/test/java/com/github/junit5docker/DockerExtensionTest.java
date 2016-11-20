@@ -10,15 +10,16 @@ import org.mockito.Mockito;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
+import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
+import static com.github.junit5docker.ExecutorSanitizer.verifyAssertionError;
 import static com.github.junit5docker.FakeLog.fakeLog;
-import static com.github.junit5docker.InterruptionIgnorer.ignoreInterrupted;
 import static com.github.junit5docker.WaitFor.NOTHING;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
@@ -53,7 +54,7 @@ public class DockerExtensionTest {
         }
 
         @Test
-        public void waitForLogToAppear() throws Exception {
+        public void waitForLogToAppear() throws Throwable {
             ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForLogTest.class);
             long duration = sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
             assertThat(duration)
@@ -90,24 +91,25 @@ public class DockerExtensionTest {
             assertThat(error.getMessage()).containsIgnoringCase("not found");
         }
 
-        private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws InterruptedException {
+        private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws Throwable {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             long callTime = System.currentTimeMillis();
-            sendLogAfter(waitingTime, timeUnit, executor);
+            Future<?> logSent = sendLogAfter(waitingTime, timeUnit, executor);
             runnable.run();
             long duration = System.currentTimeMillis() - callTime;
             executor.shutdown();
-            if (!executor.awaitTermination(waitingTime * 2, timeUnit)) {
-                fail("execution should have finished");
-            }
+            assertThat(executor.awaitTermination(waitingTime * 2, timeUnit))
+                    .overridingErrorMessage("execution should have finished")
+                    .isTrue();
+            verifyAssertionError(logSent::get);
             return duration;
         }
 
-        private void sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
+        private Future<?> sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
             AtomicBoolean sendLog = new AtomicBoolean(false);
             Stream<String> logStream = fakeLog(sendLog, WAITED_LOG);
             when(dockerClient.logs(anyString())).thenReturn(logStream);
-            executor.submit(ignoreInterrupted(() -> {
+            return executor.submit(ignoreInterrupted(() -> {
                 timeUnit.sleep(waitingTime);
                 sendLog.set(true);
             }));
