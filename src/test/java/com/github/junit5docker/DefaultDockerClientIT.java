@@ -10,14 +10,14 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import org.junit.jupiter.api.*;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
-import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -174,33 +174,14 @@ public class DefaultDockerClientIT {
 
             @Test
             public void shouldGiveLogsInStream() {
-                startContainerWithWaitingTimeAt("1ms");
+                containerID = dockerClient.createContainerCmd(WANTED_IMAGE).withEnv(singletonList("WAITING_TIME=1ms"))
+                        .exec()
+                        .getId();
+                dockerClient.startContainerCmd(containerID).exec();
                 Stream<String> logs = defaultDockerClient.logs(containerID);
                 Optional<String> firstLine = logs.findFirst();
                 assertTrue(firstLine.isPresent());
                 assertThat(firstLine.get()).contains("started");
-            }
-
-            @Test
-            @DisplayName("should close stream if interrupted")
-            public void shouldCloseIfInterrupted() {
-                startContainerWithWaitingTimeAt("1s");
-                ExecutorService executorService = interruptIn(100, TimeUnit.MILLISECONDS, currentThread());
-                try {
-                    Stream<String> logs = defaultDockerClient.logs(containerID);
-                    Optional<String> notFoundLine = logs.filter((l) -> false).findFirst();
-                    Thread.interrupted();
-                    assertFalse(notFoundLine.isPresent());
-                } finally {
-                    executorService.shutdown();
-                }
-            }
-
-            private void startContainerWithWaitingTimeAt(String duration) {
-                containerID = dockerClient.createContainerCmd(WANTED_IMAGE).withEnv(singletonList("WAITING_TIME=" + duration))
-                        .exec()
-                        .getId();
-                dockerClient.startContainerCmd(containerID).exec();
             }
         }
 
@@ -223,18 +204,22 @@ public class DefaultDockerClientIT {
 
             @Test
             @DisplayName("should close stream when logs finish")
-            public void shouldCloseWhenContainerCloses() {
+            public void shouldCloseWhenContainerCloses() throws InterruptedException {
                 Stream<String> logs = defaultDockerClient.logs(containerID);
                 ExecutorService executor = Executors.newSingleThreadExecutor();
-                Future<Boolean> lineFound = executor
-                        .submit(() -> logs.filter((l) -> false).findFirst().isPresent());
+                CountDownLatch streamReadStarted = new CountDownLatch(1);
+                CountDownLatch streamClosed = new CountDownLatch(1);
+                executor
+                        .submit(() -> {
+                            logs.peek((t) -> streamReadStarted.countDown())
+                                    .filter((l) -> false).findFirst();
+                            streamClosed.countDown();
+                        });
                 try {
-                    assertFalse(lineFound.get(1, TimeUnit.SECONDS));
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    StringWriter out = new StringWriter();
-                    e.printStackTrace(new PrintWriter(out));
-                    String stack = out.toString();
-                    fail("Log stream should have been close but reading the logs didn't ended.\nException : " + stack);
+                    streamReadStarted.await();
+                    assertThat(streamClosed.await(1, TimeUnit.SECONDS))
+                            .overridingErrorMessage("Log stream should have been closed")
+                            .isTrue();
                 } finally {
                     executor.shutdown();
                 }
@@ -258,18 +243,5 @@ public class DefaultDockerClientIT {
         } catch (NotFoundException e) {
             dockerClient.pullImageCmd(wantedImage).exec(new PullImageResultCallback()).awaitSuccess();
         }
-    }
-
-    private ExecutorService interruptIn(int timeout, TimeUnit timeUnit, Thread thread) {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(() -> {
-            try {
-                timeUnit.sleep(timeout);
-                thread.interrupt();
-            } catch (InterruptedException e) {
-                thread.interrupt();
-            }
-        });
-        return executorService;
     }
 }
