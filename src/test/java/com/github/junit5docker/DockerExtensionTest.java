@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import static com.github.junit5docker.FakeLog.fakeLog;
+import static com.github.junit5docker.InterruptionIgnorer.ignoreInterrupted;
 import static com.github.junit5docker.WaitFor.NOTHING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -64,14 +65,10 @@ public class DockerExtensionTest {
         @Test
         public void notWaitByDefault() throws Exception {
             ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNothingTest.class);
-            when(dockerClient.logs(anyString())).thenReturn(Stream.generate(() -> {
-                try {
-                    TimeUnit.MILLISECONDS.sleep(100);
-                } catch (InterruptedException e) {
-                    throw new AssertionError("Stop interrupting meee !");
-                }
+            when(dockerClient.logs(anyString())).thenReturn(Stream.generate(ignoreInterrupted(() -> {
+                TimeUnit.MILLISECONDS.sleep(100);
                 return null;
-            }));
+            })));
             dockerExtension.beforeAll(context);
         }
 
@@ -107,17 +104,13 @@ public class DockerExtensionTest {
         }
 
         private void sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
-            AtomicBoolean started = new AtomicBoolean(false);
-            Stream<String> logStream = fakeLog(started, WAITED_LOG);
+            AtomicBoolean sendLog = new AtomicBoolean(false);
+            Stream<String> logStream = fakeLog(sendLog, WAITED_LOG);
             when(dockerClient.logs(anyString())).thenReturn(logStream);
-            executor.submit(() -> {
-                try {
-                    timeUnit.sleep(waitingTime);
-                    started.set(true);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
+            executor.submit(ignoreInterrupted(() -> {
+                timeUnit.sleep(waitingTime);
+                sendLog.set(true);
+            }));
         }
 
         @Test

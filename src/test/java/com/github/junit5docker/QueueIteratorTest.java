@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.*;
 
-import static com.github.junit5docker.InterruptibleRunnable.ignoreInterrupted;
+import static com.github.junit5docker.InterruptionIgnorer.ignoreInterrupted;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
