@@ -223,13 +223,13 @@ public class DefaultDockerClientIT {
 
             @Test
             @DisplayName("should close stream when logs finish")
-            public void shouldCloseIfInterrupted() {
+            public void shouldCloseWhenContainerCloses() {
                 Stream<String> logs = defaultDockerClient.logs(containerID);
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 Future<Boolean> lineFound = executor
                         .submit(() -> logs.filter((l) -> false).findFirst().isPresent());
                 try {
-                    assertFalse(lineFound.get(500, TimeUnit.MILLISECONDS));
+                    assertFalse(lineFound.get(1, TimeUnit.SECONDS));
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     StringWriter out = new StringWriter();
                     e.printStackTrace(new PrintWriter(out));
