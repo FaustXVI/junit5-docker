@@ -9,6 +9,7 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.github.dockerjava.api.model.ExposedPort.tcp;
 import static com.github.dockerjava.api.model.Ports.Binding.bindPort;
@@ -36,6 +37,15 @@ class DefaultDockerClient implements DockerClientAdapter {
     public void stopAndRemoveContainer(String containerId) {
         dockerClient.stopContainerCmd(containerId).exec();
         dockerClient.removeContainerCmd(containerId).exec();
+    }
+
+    @Override
+    public Stream<String> logs(String containerID) {
+        return dockerClient.logContainerCmd(containerID).withFollowStream(true)
+                .withStdOut(true)
+                .withStdErr(true)
+                .exec(new StreamLog())
+                .stream();
     }
 
     private String createContainer(String wantedImage, Ports bindings, List<String> environmentStrings) {

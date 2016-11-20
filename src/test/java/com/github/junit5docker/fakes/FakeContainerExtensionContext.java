@@ -1,4 +1,4 @@
-package com.github.junit5docker;
+package com.github.junit5docker.fakes;
 
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-class FakeContainerExtensionContext implements ContainerExtensionContext {
+public class FakeContainerExtensionContext implements ContainerExtensionContext {
     private Class<?> testSampleClass;
 
     public FakeContainerExtensionContext(Class<?> testSampleClass) {

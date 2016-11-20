@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 
 import java.util.HashMap;
+import java.util.concurrent.*;
 
 public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
@@ -21,12 +22,41 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     @Override
-    public void beforeAll(ContainerExtensionContext containerExtensionContext) throws Exception {
+    public void beforeAll(ContainerExtensionContext containerExtensionContext) {
         Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
         PortBinding[] portBindings = createPortBindings(dockerAnnotation);
         HashMap<String, String> environmentMap = createEnvironmentMap(dockerAnnotation);
         String imageReference = findImageName(dockerAnnotation);
+        WaitFor waitFor = dockerAnnotation.waitFor();
         containerID = dockerClient.startContainer(imageReference, environmentMap, portBindings);
+        waitForLogAccordingTo(waitFor);
+    }
+
+    private void waitForLogAccordingTo(WaitFor waitFor) {
+        String expectedLog = waitFor.value();
+        if (!WaitFor.NOTHING.equals(expectedLog)) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<Boolean> booleanFuture = executor.submit(findFirstLogContaining(expectedLog));
+            executor.shutdown();
+            try {
+                boolean termination = executor.awaitTermination(waitFor.timeoutInMillis(), TimeUnit.MILLISECONDS);
+                if (!termination) {
+                    throw new AssertionError("Timeout while waiting for log : \"" + expectedLog + "\"");
+                }
+                if (!booleanFuture.get()) {
+                    throw new AssertionError("\"" + expectedLog + "\" not found in logs and container stopped");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+                throw new AssertionError("Should never append : probably a junit-docker bug", e);
+            }
+        }
+    }
+
+    private Callable<Boolean> findFirstLogContaining(String logToFind) {
+        return () -> dockerClient.logs(containerID).filter(log -> log.contains(logToFind))
+                .findFirst().isPresent();
     }
 
     private Docker findDockerAnnotation(ContainerExtensionContext containerExtensionContext) {
