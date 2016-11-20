@@ -56,7 +56,7 @@ public class StreamLogTest {
     }
 
     @Test
-    public void shouldGiveAnEmptyStreamWhenFailsImmediatly() throws InterruptedException, ExecutionException, TimeoutException {
+    public void shouldGiveAnEmptyStreamWhenFailsImmediatly() throws InterruptedException, ExecutionException {
         streamLog.onError(Mockito.mock(Throwable.class));
         CountDownLatch streamCollected = new CountDownLatch(1);
         Future<List<String>> logs = executor.submit(() -> {
@@ -99,7 +99,7 @@ public class StreamLogTest {
     }
 
     @Test
-    public void shouldInterruptStreamWhenDockerThreadInterrupted() throws InterruptedException {
+    public void shouldInterruptStreamWhenDockerThreadInterrupted() {
         Thread.currentThread().interrupt();
         streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes()));
         assertThat(Thread.interrupted()).isTrue();

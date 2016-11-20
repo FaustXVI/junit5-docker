@@ -39,14 +39,14 @@ public class DockerExtensionTest {
     class BeforeAllTestsShould {
 
         @Test
-        public void startContainerWithOnePort() throws Exception {
+        public void startContainerWithOnePort() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OnePortTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), eq(new PortBinding(8801, 8800)));
         }
 
         @Test
-        public void startContainerWithMultiplePorts() throws Exception {
+        public void startContainerWithMultiplePorts() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(MultiplePortTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), eq(new PortBinding(8801, 8800)),
@@ -64,7 +64,7 @@ public class DockerExtensionTest {
         }
 
         @Test
-        public void notWaitByDefault() throws Exception {
+        public void notWaitByDefault() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNothingTest.class);
             when(dockerClient.logs(anyString())).thenReturn(Stream.generate(ignoreInterrupted(() -> {
                 TimeUnit.MILLISECONDS.sleep(100);
@@ -74,7 +74,7 @@ public class DockerExtensionTest {
         }
 
         @Test
-        public void timeoutIfLogDoesNotAppear() throws Exception {
+        public void timeoutIfLogDoesNotAppear() {
             AssertionError error = expectThrows(AssertionError.class, () -> {
                 ContainerExtensionContext context = new FakeContainerExtensionContext(TimeoutTest.class);
                 sendLogAndTimeExecution(1, TimeUnit.SECONDS, () -> dockerExtension.beforeAll(context));
@@ -83,7 +83,7 @@ public class DockerExtensionTest {
         }
 
         @Test
-        public void throwsExceptionIfLogNotFoundAndLogsEnded() throws Exception {
+        public void throwsExceptionIfLogNotFoundAndLogsEnded() {
             AssertionError error = expectThrows(AssertionError.class, () -> {
                 ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNotPresentLogTest.class);
                 sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
@@ -116,7 +116,7 @@ public class DockerExtensionTest {
         }
 
         @Test
-        public void startContainerWithEnvironmentVariables() throws Exception {
+        public void startContainerWithEnvironmentVariables() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OneEnvironmentTest.class);
             dockerExtension.beforeAll(context);
             ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
@@ -135,7 +135,7 @@ public class DockerExtensionTest {
         private static final String CONTAINER_ID = "CONTAINER_ID";
 
         @BeforeEach
-        public void callBefore() throws Exception {
+        public void callBefore() {
             when(dockerClient.startContainer(anyString(), Mockito.<String, String>anyMap(),
                     any(PortBinding[].class)))
                     .thenReturn(CONTAINER_ID);

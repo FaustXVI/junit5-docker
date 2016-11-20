@@ -47,7 +47,7 @@ public class QueueIteratorTest {
     }
 
     @Test
-    public void shouldInterruptIfThreadIsInterrupted() throws InterruptedException {
+    public void shouldInterruptIfThreadIsInterrupted() {
         Thread.currentThread().interrupt();
         assertThat(iterator.hasNext()).isFalse();
         assertThat(Thread.interrupted()).isTrue();
@@ -85,7 +85,7 @@ public class QueueIteratorTest {
         }
 
         @Test
-        void shouldGiveFirstLineEvenAfterTwoCallToHasNext() throws InterruptedException {
+        void shouldGiveFirstLineEvenAfterTwoCallToHasNext() {
             CountDownLatch firstLinePushed = new CountDownLatch(1);
             executor.submit(ignoreInterrupted(() -> {
                 lines.put("a line");
