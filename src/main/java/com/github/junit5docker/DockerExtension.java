@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import java.util.HashMap;
 import java.util.concurrent.*;
 
-public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
+class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
     private final DockerClientAdapter dockerClient;
 
