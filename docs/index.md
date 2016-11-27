@@ -13,7 +13,7 @@ order: 0
 
   The entrypoint is the `@Docker` annotation. Please refer to the [Javadoc]() for more details.
   
-  The container is start once for the whole class and before any test method is called; and stopped afterward. 
+  The container is started once for the whole class and before any test method is called; and stopped afterward. 
   This mean that the container is already started when the `@Before` methods are called and destroyed after the `@After` methods.
   
   Be aware that the container is not restarted between tests so changing the state of the container in one test may affect other tests.
