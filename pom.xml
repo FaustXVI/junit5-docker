@@ -14,6 +14,8 @@
         <junit.jupiter.version>5.0.0-M2</junit.jupiter.version>
         <junit.vintage.version>4.12.0-M2</junit.vintage.version>
         <junit.platform.version>1.0.0-M2</junit.platform.version>
+        <destDir>${project.version}</destDir>
+        <additionalparam>-notimestamp</additionalparam>
     </properties>
 
     <build>
