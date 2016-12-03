@@ -55,3 +55,7 @@ redcarpet:
         'tables',
         'hardwrap'
     ]
+
+
+kramdown:
+    input:          GFM
