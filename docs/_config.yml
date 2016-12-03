@@ -56,6 +56,7 @@ redcarpet:
         'hardwrap'
     ]
 
-
 kramdown:
-    input:          GFM
+   input: GFM
+   hard_wrap: false
+   math_engine: mathjax
