@@ -39,6 +39,8 @@ highlighter: rouge
 # Since these are pages, it doesn't really matter
 future: true
 
+include: ['javadoc']
+
 # Exclude non-site files
 exclude: ['bin']
 
