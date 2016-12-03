@@ -11,7 +11,7 @@ order: 0
 
  ## Usage
 
-  The entrypoint is the `@Docker` annotation. Please refer to the [Javadoc]() for more details.
+  The entrypoint is the `@Docker` annotation. Please refer to the [Javadoc](https://faustxvi.github.io/junit5-docker/javadoc/current/) for more details.
   
   The container is started once for the whole class and before any test method is called; and stopped afterward. 
   This mean that the container is already started when the `@Before` methods are called and destroyed after the `@After` methods.
