@@ -13,7 +13,7 @@ import static com.github.junit5docker.WaitFor.NOTHING;
  * <p>This annotation is the junit-docker entry point.</p>
  *
  * <p>Adding this annotation to a test's class will start a docker container before running the tests and will be stop at the end of the tests.
- * This is done once per class.<p/>
+ * This is done once per class.</p>
  *
  * @since 1.0
  */
