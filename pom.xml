@@ -161,5 +161,9 @@
             <organizationUrl>https://github.com/ksouf</organizationUrl>
         </developer>
     </developers>
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/FaustXVI/junit5-docker/issues</url>
+    </issueManagement>
 
 </project>
