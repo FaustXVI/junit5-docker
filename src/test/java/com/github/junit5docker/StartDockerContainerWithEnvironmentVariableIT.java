@@ -1,7 +1,7 @@
 package com.github.junit5docker;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
         environments = {@Environment(key = "test", value = "42"), @Environment(key = "toRead", value = "theAnswer")})
 public class StartDockerContainerWithEnvironmentVariableIT {
 
-    @Before
+    @BeforeEach
     void verifyContainerIsReady() {
         checkConnectionsToContainer();
     }
@@ -28,7 +28,7 @@ public class StartDockerContainerWithEnvironmentVariableIT {
         checkConnectionsToContainer();
     }
 
-    @After
+    @AfterEach
     void verifyContainerIsStillAlive() {
         checkConnectionsToContainer();
     }

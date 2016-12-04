@@ -3,8 +3,8 @@ package com.github.junit5docker;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.fail;
         waitFor = @WaitFor("started"))
 public class WaitForLogIT {
 
-    @Before
+    @BeforeEach
     void verifyContainerIsReady() {
         checkConnectionToContainer();
     }
@@ -27,7 +27,7 @@ public class WaitForLogIT {
         checkConnectionToContainer();
     }
 
-    @After
+    @AfterEach
     void verifyContainerIsStillAlive() {
         checkConnectionToContainer();
     }

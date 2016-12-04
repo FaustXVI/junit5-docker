@@ -1,7 +1,7 @@
 package com.github.junit5docker;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.fail;
         8081)})
 public class StartDockerContainerWithMultiplePortsIT {
 
-    @Before
+    @BeforeEach
     void verifyContainerIsReady() {
         checkConnectionsToContainer();
     }
@@ -24,7 +24,7 @@ public class StartDockerContainerWithMultiplePortsIT {
         checkConnectionsToContainer();
     }
 
-    @After
+    @AfterEach
     void verifyContainerIsStillAlive() {
         checkConnectionsToContainer();
     }

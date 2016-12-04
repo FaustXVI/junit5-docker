@@ -1,7 +1,7 @@
 package com.github.junit5docker;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Docker(image = "faustxvi/simple-two-ports", ports = @Port(exposed = 8801, inner = 8080))
 public class StartDockerContainerIT {
 
-    @Before
+    @BeforeEach
     void verifyContainerIsReady() {
         checkConnectionToContainer();
     }
@@ -23,7 +23,7 @@ public class StartDockerContainerIT {
         checkConnectionToContainer();
     }
 
-    @After
+    @AfterEach
     void verifyContainerIsStillAlive() {
         checkConnectionToContainer();
     }
