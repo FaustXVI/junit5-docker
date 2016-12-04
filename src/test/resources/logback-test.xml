@@ -7,7 +7,7 @@
         </layout>
     </appender>
 
-    <logger name="fr.detant" level="DEBUG"/>
+    <logger name="com.github.faustxvi" level="DEBUG"/>
 
 
     <root level="WARN">
