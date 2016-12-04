@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ $TRAVIS_BRANCH == "master" ]
+if [ $TRAVIS_BRANCH == "master" && -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
 then
     eval `ssh-agent -s`
     ssh-add .travis/travis_rsa
@@ -28,4 +28,6 @@ then
     else
         echo "No javadoc to commit"
     fi
+else
+    echo "On a branch, doing nothing !"
 fi
