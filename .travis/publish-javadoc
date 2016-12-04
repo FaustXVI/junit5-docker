@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ $TRAVIS_BRANCH == "master" && -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
+if [ "$TRAVIS_BRANCH" == "master" ] && [ -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
 then
     eval `ssh-agent -s`
     ssh-add .travis/travis_rsa
