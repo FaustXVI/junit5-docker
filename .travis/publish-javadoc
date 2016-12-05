@@ -1,18 +1,22 @@
 #!/bin/bash
 if [ "$TRAVIS_BRANCH" == "master" ] && [ -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
 then
+
+    openssl aes-256-cbc -K $encrypted_1aab6c06035c_key -iv $encrypted_1aab6c06035c_iv -in .travis/travis_rsa.enc -out .travis/travis_rsa -d
+    chmod og-rwx .travis/travis_rsa
+
     eval `ssh-agent -s`
     ssh-add .travis/travis_rsa
 
     git clone git@github.com:FaustXVI/junit5-docker.git out
     cd out
 
-    git branch -a
     git checkout $TRAVIS_BRANCH
     git config --global user.email "travis@travis-ci.org"
     git config --global user.name "travis-ci"
 
-    mvn javadoc:javadoc
+    # The -D option is required here because the javadoc maven plugin does not work when specifying a different destination in report mode than in build mode.
+    mvn clean javadoc:javadoc '-DdestDir=${project.version}'
     VERSION=$(ls target/site/apidocs)
     rm -r docs/javadoc/$VERSION
     mv target/site/apidocs/$VERSION docs/javadoc/
