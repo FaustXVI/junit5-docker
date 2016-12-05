@@ -4,9 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.junit5docker</groupId>
+    <groupId>com.github.faustxvi</groupId>
     <artifactId>junit5-docker</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>JUnit5-Docker</name>
+    <description>A JUnit5 extension that allows you to start containers from your tests</description>
+    <url>https://faustxvi.github.io/junit5-docker/</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,8 +17,7 @@
         <junit.jupiter.version>5.0.0-M2</junit.jupiter.version>
         <junit.vintage.version>4.12.0-M2</junit.vintage.version>
         <junit.platform.version>1.0.0-M2</junit.platform.version>
-        <destDir>${project.version}</destDir>
-        <additionalparam>-notimestamp</additionalparam>
+        <gpg.skip>true</gpg.skip>
     </properties>
 
     <build>
@@ -59,15 +61,89 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>gpg2</executable>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <id>analyze-dependencies</id>
+                        <goals>
+                            <goal>analyze</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failBuild>true</failBuild>
+                    <failOnWarning>true</failOnWarning>
+                    <ignoredUnusedDeclaredDependencies>
+                        <unusedDeclaredDependency>org.junit.jupiter</unusedDeclaredDependency>
+                        <unusedDeclaredDependency>ch.qos.logback</unusedDeclaredDependency>
+                    </ignoredUnusedDeclaredDependencies>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
+                <configuration>
+                    <destDir>${project.version}</destDir>
+                    <additionalparam>-notimestamp</additionalparam>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
+
     <dependencies>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.21</version>
-        </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java</artifactId>
@@ -79,15 +155,14 @@
             <version>5.0.0-M2</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.3.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <version>${junit.vintage.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -112,6 +187,42 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.5.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <developers>
+        <developer>
+            <name>Xavier Detant</name>
+            <organizationUrl>https://github.com/FaustXVI</organizationUrl>
+        </developer>
+        <developer>
+            <name>Vincent Demeester</name>
+            <organizationUrl>https://github.com/vdemeester</organizationUrl>
+        </developer>
+        <developer>
+            <name>Abdellah Zeroual</name>
+            <organizationUrl>https://github.com/zeroual</organizationUrl>
+        </developer>
+        <developer>
+            <name>Khaled Souf</name>
+            <organizationUrl>https://github.com/ksouf</organizationUrl>
+        </developer>
+    </developers>
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/FaustXVI/junit5-docker/issues</url>
+    </issueManagement>
+    <scm>
+        <connection>scm:git:https://github.com/FaustXVI/junit5-docker.git</connection>
+        <developerConnection>scm:git:git://github.com/FaustXVI/junit5-docker.git</developerConnection>
+        <url>https://github.com/FaustXVI/junit5-docker</url>
+    </scm>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
 </project>
