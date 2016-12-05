@@ -1,13 +1,11 @@
 ---
 layout: page
-title:  JUnit5-docker
+title: JUnit5-Docker
 category: doc
 order: 0
 ---
 
-# JUnit5-docker
-
-`JUnit5-docker` is a `JUnit5` extension that start docker containers before running tests and stop them afterwards.
+[`JUnit5-Docker`](https://github.com/FaustXVI/junit5-docker) is a `JUnit5` extension that start docker containers before running tests and stop them afterwards.
 
 ## Usage
 
