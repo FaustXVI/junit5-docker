@@ -15,7 +15,8 @@ then
     git config --global user.email "travis@travis-ci.org"
     git config --global user.name "travis-ci"
 
-    mvn javadoc:javadoc
+    # The -D option is required here because the javadoc maven plugin does not work when specifying a different destination in report mode than in build mode.
+    mvn clean javadoc:javadoc '-DdestDir=${project.version}'
     VERSION=$(ls target/site/apidocs)
     rm -r docs/javadoc/$VERSION
     mv target/site/apidocs/$VERSION docs/javadoc/
