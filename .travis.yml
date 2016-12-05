@@ -5,11 +5,11 @@ language: java
 jdk:
     - oraclejdk8
 script: mvn verify
+before_install:
+    - openssl aes-256-cbc -K $encrypted_1aab6c06035c_key -iv $encrypted_1aab6c06035c_iv -in .travis/travis_rsa.enc -out .travis/travis_rsa -d
+    - chmod og-rwx .travis/travis_rsa
+after_success:
+    - .travis/publish-javadoc
 branches:
     only:
         - master
-    before_install: 
-        - openssl aes-256-cbc -K $encrypted_1aab6c06035c_key -iv $encrypted_1aab6c06035c_iv -in .travis/travis_rsa.enc -out .travis/travis_rsa -d
-        - chmod og-rwx .travis/travis_rsa
-    after_success:
-        - .travis/publish-javadoc

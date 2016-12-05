@@ -1,35 +1,33 @@
 #!/bin/bash
-eval `ssh-agent -s`
-ssh-add .travis/travis_rsa
-
-git clone git@github.com:FaustXVI/junit5-docker.git out
-cd out
-
-if [ -n "$TRAVIS_PULL_REQUEST_BRANCH" ]
+if [ "$TRAVIS_BRANCH" == "master" ] && [ -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
 then
-    BRANCH=$TRAVIS_PULL_REQUEST_BRANCH
+    eval `ssh-agent -s`
+    ssh-add .travis/travis_rsa
+
+    git clone git@github.com:FaustXVI/junit5-docker.git out
+    cd out
+
+    git branch -a
+    git checkout $TRAVIS_BRANCH
+    git config --global user.email "travis@travis-ci.org"
+    git config --global user.name "travis-ci"
+
+    mvn javadoc:javadoc
+    VERSION=$(ls target/site/apidocs)
+    rm -r docs/javadoc/$VERSION
+    mv target/site/apidocs/$VERSION docs/javadoc/
+    git add docs/javadoc
+
+    CHANGED=$(git status -uno -s)
+    echo $CHANGED
+
+    if [ -n "$CHANGED" ]
+    then
+        git commit -m "Add javadoc"
+        git push origin $TRAVIS_BRANCH
+    else
+        echo "No javadoc to commit"
+    fi
 else
-    BRANCH=$TRAVIS_BRANCH
-fi
-
-git branch -a
-git checkout $BRANCH
-git config --global user.email "travis@travis-ci.org"
-git config --global user.name "travis-ci"
-
-mvn javadoc:javadoc
-VERSION=$(ls target/site/apidocs)
-rm -r docs/javadoc/$VERSION
-mv target/site/apidocs/$VERSION docs/javadoc/
-git add docs/javadoc
-
-CHANGED=$(git status -uno -s)
-echo $CHANGED
-
-if [ -n "$CHANGED" ]
-then
-    git commit -m "Add javadoc"
-    git push origin $BRANCH
-else
-    echo "No javadoc to commit"
+    echo "On a branch, doing nothing !"
 fi
