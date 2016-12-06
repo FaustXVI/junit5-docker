@@ -6,7 +6,7 @@ jdk:
     - oraclejdk8
 script: mvn verify
 after_success:
-    - .travis/publish-javadoc
+    - .travis/publish-documentation.sh
 branches:
     only:
         - master
