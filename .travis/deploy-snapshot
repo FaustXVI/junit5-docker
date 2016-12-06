@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+if [ ${TRAVIS} ] && [ "$TRAVIS_BRANCH" == "master" ] && [ -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
+then
+    openssl aes-256-cbc -K $encrypted_e6b9672fee19_key -iv $encrypted_e6b9672fee19_iv -in settings.xml.enc -out ~/.m2/settings.xml -d
+    chmod og-rwx ~/.m2/settings.xml
+
+    mvn deploy
+else
+    echo "On a branch or not on travis, not deploying !"
+fi

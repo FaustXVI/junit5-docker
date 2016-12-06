@@ -7,6 +7,7 @@ jdk:
 script: mvn verify
 after_success:
     - .travis/publish-documentation.sh
+    - .travis/deploy-snapshot
 branches:
     only:
         - master
