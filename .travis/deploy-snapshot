@@ -1,11 +1,22 @@
 #!/usr/bin/env bash
 
-if [ ${TRAVIS} ] && [ "$TRAVIS_BRANCH" == "master" ] && [ -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
-then
+function prepare_maven {
     openssl aes-256-cbc -K $encrypted_e6b9672fee19_key -iv $encrypted_e6b9672fee19_iv -in settings.xml.enc -out ~/.m2/settings.xml -d
     chmod og-rwx ~/.m2/settings.xml
+}
 
-    mvn deploy
+function get_version {
+    echo 'VERSION=${project.version}' | mvn help:evaluate | grep ^VERSION | sed -E 's/VERSION=(.*)/\1/'
+}
+
+if [ ${TRAVIS} ] && [ "$TRAVIS_BRANCH" == "master" ] && [ -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
+then
+    prepare_maven
+    local VERSION=$(get_version)
+    if [[ ${VERSION} =~ "SNAPSHOT" ]]
+    then
+        mvn deploy
+    fi
 else
     echo "On a branch or not on travis, not deploying !"
 fi
