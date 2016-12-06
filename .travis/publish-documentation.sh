@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DOCS_FOLDER=docs
 DOCUMENTATION_FOLDER=${DOCS_FOLDER}/documentation
