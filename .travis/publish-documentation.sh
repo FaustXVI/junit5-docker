@@ -52,7 +52,7 @@ function push_documentation {
 
 function update_link {
     cd $1
-    ln -s -f $2 $3
+    ln -s -n -f $2 $3
     cd - > /dev/null
 }
 
