@@ -1,5 +1,9 @@
 #!/bin/bash
 
+DOCS_FOLDER=docs
+DOCUMENTATION_FOLDER=${DOCS_FOLDER}/documentation
+JAVADOC_FOLDER=${DOCS_FOLDER}/javadoc
+
 function prepare_ssh {
     openssl aes-256-cbc -K ${encrypted_1aab6c06035c_key} -iv ${encrypted_1aab6c06035c_iv} -in .travis/travis_rsa.enc -out .travis/travis_rsa -d
     chmod og-rwx .travis/travis_rsa
@@ -19,17 +23,17 @@ function get_version {
 function create_documentation {
     local VERSION="$1"
     mvn resources:testResources
-    rm -rf docs/documentation/${VERSION} docs/documentation/*SNAPSHOT
-    mkdir -p docs/documentation/${VERSION}
-    mv target/test-classes/documentation/* docs/documentation/${VERSION}
+    rm -rf ${DOCUMENTATION_FOLDER}/${VERSION} ${DOCUMENTATION_FOLDER}/*SNAPSHOT
+    mkdir -p ${DOCUMENTATION_FOLDER}/${VERSION}
+    mv target/test-classes/documentation/* ${DOCUMENTATION_FOLDER}/${VERSION}
 }
 
 function create_javadoc {
     local VERSION="$1"
     # The -D option is required here because the javadoc maven plugin does not work when specifying a different destination in report mode than in build mode.
     mvn clean javadoc:javadoc -DdestDir=${VERSION}
-    rm -rf docs/javadoc/${VERSION} docs/javadoc/*SNAPSHOT
-    mv target/site/apidocs/${VERSION} docs/javadoc/
+    rm -rf ${JAVADOC_FOLDER}/${VERSION} ${JAVADOC_FOLDER}/*SNAPSHOT
+    mv target/site/apidocs/${VERSION} ${JAVADOC_FOLDER}/
 }
 
 function push_documentation {
@@ -46,10 +50,29 @@ function push_documentation {
     fi
 }
 
+function update_link {
+    cd $1
+    ln -s -f $2 $3
+    cd - > /dev/null
+}
+
+function update_symlinks {
+    local VERSION="$1"
+    if [[ ${VERSION} =~ "SNAPSHOT" ]]
+    then
+        update_link ${DOCUMENTATION_FOLDER} ${VERSION} snapshot
+        update_link ${JAVADOC_FOLDER} ${VERSION} snapshot
+    else
+        update_link ${DOCUMENTATION_FOLDER} ${VERSION} current
+        update_link ${JAVADOC_FOLDER} ${VERSION} current
+    fi
+}
+
 function publish_all_documentation {
     VERSION=$(get_version)
     create_documentation ${VERSION}
     create_javadoc ${VERSION}
+    update_symlinks ${VERSION}
     push_documentation
 }
 

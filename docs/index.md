@@ -1,1 +1,1 @@
-documentation/snapshots/1.0.0-SNAPSHOT/index.md
+documentation/current/index.md
