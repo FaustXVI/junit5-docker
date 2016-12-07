@@ -21,6 +21,15 @@
         <additionalparam>-notimestamp</additionalparam>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>sign-artifacts</id>
+            <properties>
+                <gpg.skip>false</gpg.skip>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <testResources>
             <testResource>
@@ -142,6 +151,18 @@
                     <serverId>ossrh</serverId>
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <releaseProfiles>release,sign-artifacts</releaseProfiles>
+                    <goals>deploy</goals>
+                    <tagNameFormat>release-@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>
         </plugins>
