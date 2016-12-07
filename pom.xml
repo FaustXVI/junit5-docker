@@ -240,7 +240,7 @@
     </issueManagement>
     <scm>
         <connection>scm:git:https://github.com/FaustXVI/junit5-docker.git</connection>
-        <developerConnection>scm:git:git://github.com/FaustXVI/junit5-docker.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:FaustXVI/junit5-docker.git</developerConnection>
         <url>https://github.com/FaustXVI/junit5-docker</url>
     </scm>
     <licenses>
