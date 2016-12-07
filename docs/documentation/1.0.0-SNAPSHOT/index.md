@@ -10,8 +10,35 @@ _This is the documentation for the version 1.0.0-SNAPSHOT._
 
 _The last released version can be found at [https://faustxvi.github.io/junit5-docker/current](https://faustxvi.github.io/junit5-docker/current) and the documentation of the under developpment version can be found at [https://faustxvi.github.io/junit5-docker/snapshot](https://faustxvi.github.io/junit5-docker/snapshot)_ 
 
+## Dependency
+
+{% if "1.0.0-SNAPSHOT" contains "SNAPSHOT" %}
+
+Since this is a SNAPSHOT version, you can't find it on maven central so you'll need to add the repository to your `pom.xml` like this :
+
+```xml
+      <repositories>
+          <repository>
+              <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+              <id>ossrh</id>
+          </repository>
+      </repositories>
+```
+
+{% endif %}
+
+To use `JUnit5-Docker`, you first need to declare it as a dependency. Add these lines to your `pom.xml` if you are using maven.
+
+```xml
+      <dependency>
+          <groupId>com.github.faustxvi</groupId>
+          <artifactId>junit5-docker</artifactId>
+          <version>1.0.0-SNAPSHOT</version>
+          <scope>test</scope>
+      </dependency>
+```
+
 ## Usage
-  
 
   The entrypoint is the `@Docker` annotation.
   Please refer to the [Javadoc](https://faustxvi.github.io/junit5-docker/javadoc/1.0.0-SNAPSHOT) for more details.
