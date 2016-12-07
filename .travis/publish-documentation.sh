@@ -23,7 +23,11 @@ function get_version {
 function create_documentation {
     local VERSION="$1"
     mvn resources:testResources
-    rm -rf ${DOCUMENTATION_FOLDER}/${VERSION} ${DOCUMENTATION_FOLDER}/*SNAPSHOT
+    rm -rf ${DOCUMENTATION_FOLDER}/${VERSION}
+    if [[ ${VERSION} =~ "SNAPSHOT" ]]
+    then
+        rm -rf ${DOCUMENTATION_FOLDER}/*SNAPSHOT
+    fi
     mkdir -p ${DOCUMENTATION_FOLDER}/${VERSION}
     mv target/test-classes/documentation/* ${DOCUMENTATION_FOLDER}/${VERSION}
 }
@@ -32,7 +36,11 @@ function create_javadoc {
     local VERSION="$1"
     # The -D option is required here because the javadoc maven plugin does not work when specifying a different destination in report mode than in build mode.
     mvn clean javadoc:javadoc -DdestDir=${VERSION}
-    rm -rf ${JAVADOC_FOLDER}/${VERSION} ${JAVADOC_FOLDER}/*SNAPSHOT
+    rm -rf ${JAVADOC_FOLDER}/${VERSION}
+    if [[ ${VERSION} =~ "SNAPSHOT" ]]
+    then
+        rm -rf ${JAVADOC_FOLDER}/*SNAPSHOT
+    fi
     mv target/site/apidocs/${VERSION} ${JAVADOC_FOLDER}/
 }
 
