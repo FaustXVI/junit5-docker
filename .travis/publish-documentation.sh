@@ -81,16 +81,15 @@ function publish_all_documentation {
     create_documentation ${VERSION}
     create_javadoc ${VERSION}
     update_symlinks ${VERSION}
-    push_documentation
 }
 
 if [ ${TRAVIS} ] && [ "$TRAVIS_BRANCH" == "master" ] && [ -z "$TRAVIS_PULL_REQUEST_BRANCH" ]
 then
     prepare_ssh
     configure_git
-    git clone git@github.com:FaustXVI/junit5-docker.git out
-    cd out
     publish_all_documentation
+    git checkout master
+    push_documentation
 else
     echo "On a branch or not on travis, doing nothing !"
 fi
