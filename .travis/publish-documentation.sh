@@ -69,7 +69,7 @@ function update_symlinks {
 }
 
 function publish_all_documentation {
-    VERSION=$(get_version)
+    local VERSION=$(get_version)
     create_documentation ${VERSION}
     create_javadoc ${VERSION}
     update_symlinks ${VERSION}
