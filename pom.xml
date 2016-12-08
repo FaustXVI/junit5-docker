@@ -4,7 +4,7 @@
 
     <groupId>com.github.faustxvi</groupId>
     <artifactId>junit5-docker</artifactId>
-    <version>1.0.0-RC1</version>
+    <version>1.0.0-SNAPSHOT</version>
     <name>JUnit5-Docker</name>
     <description>A JUnit5 extension that allows you to start containers from your tests</description>
     <url>https://faustxvi.github.io/junit5-docker/</url>
@@ -240,7 +240,7 @@
         <connection>scm:git:https://github.com/FaustXVI/junit5-docker.git</connection>
         <developerConnection>scm:git:git@github.com:FaustXVI/junit5-docker.git</developerConnection>
         <url>https://github.com/FaustXVI/junit5-docker</url>
-      <tag>release-1.0.0-RC1</tag>
+      <tag>HEAD</tag>
   </scm>
     <licenses>
         <license>
