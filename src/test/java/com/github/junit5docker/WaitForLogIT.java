@@ -9,8 +9,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 
 @Docker(image = "faustxvi/open-port-later", ports = @Port(exposed = 8801, inner = 8080),
         environments = @Environment(key = "WAITING_TIME", value = "1s"),
@@ -35,7 +36,7 @@ public class WaitForLogIT {
     private void checkConnectionToContainer() {
         try (CloseableHttpResponse execute = HttpClientBuilder.create().build()
                 .execute(new HttpGet("http://localhost:8801"))) {
-            assertNotNull(execute);
+            assertThat(execute).isNotNull();
         } catch (IOException e) {
             fail("The port 8801 should be listening");
         }
