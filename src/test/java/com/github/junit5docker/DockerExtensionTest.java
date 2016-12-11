@@ -22,11 +22,10 @@ import static com.github.junit5docker.fakes.FakeLog.fakeLog;
 import static com.github.junit5docker.WaitFor.NOTHING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DockerExtensionTest {
 
@@ -109,7 +108,7 @@ public class DockerExtensionTest {
         private Future<?> sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
             AtomicBoolean sendLog = new AtomicBoolean(false);
             Stream<String> logStream = fakeLog(sendLog, WAITED_LOG);
-            when(dockerClient.logs(anyString())).thenReturn(logStream);
+            when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
             return executor.submit(ignoreInterrupted(() -> {
                 timeUnit.sleep(waitingTime);
                 sendLog.set(true);
@@ -120,7 +119,7 @@ public class DockerExtensionTest {
         public void startContainerWithEnvironmentVariables() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OneEnvironmentTest.class);
             dockerExtension.beforeAll(context);
-            ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, String>> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
             verify(dockerClient).startContainer(eq("wantedImage"),
                     mapArgumentCaptor.<String, String>capture(), any(PortBinding[].class));
             Map<String, String> environment = mapArgumentCaptor.getValue();
