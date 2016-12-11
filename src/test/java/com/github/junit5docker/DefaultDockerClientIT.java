@@ -32,17 +32,17 @@ public class DefaultDockerClientIT {
 
     private DockerClient dockerClient = DockerClientBuilder.getInstance(createDefaultConfigBuilder().withApiVersion("1.22")).build();
 
-    private List<Container> containers;
+    private List<Container> existingContainers;
 
     @BeforeEach
     public void getExistingContainers() {
-        containers = dockerClient.listContainersCmd().exec();
+        existingContainers = dockerClient.listContainersCmd().exec();
     }
 
     @AfterEach
     public void stopAndRemoveStartedContainers() {
         dockerClient.listContainersCmd().exec().stream()
-                .filter(container -> !containers.contains(container))
+                .filter(container -> !existingContainers.contains(container))
                 .forEach(container -> {
                     dockerClient.stopContainerCmd(container.getId()).exec();
                     dockerClient.removeContainerCmd(container.getId()).exec();
@@ -75,7 +75,7 @@ public class DefaultDockerClientIT {
             @DisplayName("start a container without ports")
             public void shouldStartContainer() {
                 String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap());
-                assertThat(dockerClient.listContainersCmd().exec()).hasSize(containers.size() + 1);
+                assertThat(dockerClient.listContainersCmd().exec()).hasSize(existingContainers.size() + 1);
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 assertThat(startedContainer.getConfig().getImage()).isEqualTo(WANTED_IMAGE);
             }
@@ -129,7 +129,7 @@ public class DefaultDockerClientIT {
             @DisplayName("start a container after pulling the image")
             public void shouldStartContainer() {
                 String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap());
-                assertThat(dockerClient.listContainersCmd().exec()).hasSize(containers.size() + 1);
+                assertThat(dockerClient.listContainersCmd().exec()).hasSize(existingContainers.size() + 1);
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 assertThat(startedContainer.getConfig().getImage()).isEqualTo(WANTED_IMAGE);
             }
@@ -143,7 +143,7 @@ public class DefaultDockerClientIT {
                 public void shouldStartLatestContainer() {
                     String containerId = defaultDockerClient.startContainer("faustxvi/simple-two-ports", emptyMap());
                     List<Container> currentContainers = dockerClient.listContainersCmd().exec();
-                    assertThat(currentContainers).hasSize(containers.size() + 1);
+                    assertThat(currentContainers).hasSize(existingContainers.size() + 1);
                     InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                     assertThat(startedContainer.getConfig().getImage()).isEqualTo(WANTED_IMAGE);
                 }
@@ -169,7 +169,7 @@ public class DefaultDockerClientIT {
         @DisplayName("should remove the container")
         public void shouldRemoveTheContainer() {
             defaultDockerClient.stopAndRemoveContainer(containerID);
-            assertThat(dockerClient.listContainersCmd().exec()).hasSize(containers.size());
+            assertThat(dockerClient.listContainersCmd().exec()).hasSize(existingContainers.size());
             assertThatExceptionOfType(NotFoundException.class)
                     .isThrownBy(() -> dockerClient.inspectContainerCmd(containerID).exec());
         }
