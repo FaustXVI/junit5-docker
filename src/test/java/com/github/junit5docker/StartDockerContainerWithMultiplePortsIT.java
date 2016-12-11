@@ -7,8 +7,9 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.Socket;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 
 @Docker(image = "faustxvi/simple-two-ports", ports = {@Port(exposed = 8080, inner = 8080), @Port(exposed = 8443, inner =
         8081)})
@@ -36,7 +37,7 @@ public class StartDockerContainerWithMultiplePortsIT {
 
     private void checkConnectionToContainer(int port) {
         try (Socket container = new Socket("localhost", port)) {
-            assertNotNull(container);
+            assertThat(container).isNotNull();
         } catch (IOException e) {
             fail("The port " + port + " should be listening");
         }

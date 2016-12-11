@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -18,14 +17,17 @@ import java.util.stream.Stream;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.ExecutorSanitizer.verifyAssertionError;
-import static com.github.junit5docker.fakes.FakeLog.fakeLog;
 import static com.github.junit5docker.WaitFor.NOTHING;
+import static com.github.junit5docker.fakes.FakeLog.fakeLog;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 
 public class DockerExtensionTest {
 
@@ -75,20 +77,18 @@ public class DockerExtensionTest {
 
         @Test
         public void timeoutIfLogDoesNotAppear() {
-            AssertionError error = expectThrows(AssertionError.class, () -> {
+            assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
                 ContainerExtensionContext context = new FakeContainerExtensionContext(TimeoutTest.class);
                 sendLogAndTimeExecution(1, TimeUnit.SECONDS, () -> dockerExtension.beforeAll(context));
-            });
-            assertThat(error.getMessage()).containsIgnoringCase("timeout");
+            }).withMessageContaining("Timeout");
         }
 
         @Test
         public void throwsExceptionIfLogNotFoundAndLogsEnded() {
-            AssertionError error = expectThrows(AssertionError.class, () -> {
+            assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
                 ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNotPresentLogTest.class);
                 sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
-            });
-            assertThat(error.getMessage()).containsIgnoringCase("not found");
+            }).withMessageContaining("not found");
         }
 
         private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws Throwable {
@@ -121,11 +121,12 @@ public class DockerExtensionTest {
             dockerExtension.beforeAll(context);
             ArgumentCaptor<Map<String, String>> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
             verify(dockerClient).startContainer(eq("wantedImage"),
-                    mapArgumentCaptor.<String, String>capture(), any(PortBinding[].class));
+                    mapArgumentCaptor.capture(), any(PortBinding[].class));
             Map<String, String> environment = mapArgumentCaptor.getValue();
-            assertEquals(1, environment.size());
-            assertTrue(environment.containsKey("toTest"));
-            assertEquals("myValue", environment.get("toTest"));
+            assertThat(environment)
+                    .hasSize(1)
+                    .containsKeys("toTest")
+                    .containsValues("myValue");
         }
     }
 
@@ -136,7 +137,7 @@ public class DockerExtensionTest {
 
         @BeforeEach
         public void callBefore() {
-            when(dockerClient.startContainer(anyString(), Mockito.<String, String>anyMap(),
+            when(dockerClient.startContainer(anyString(), anyMap(),
                     any(PortBinding[].class)))
                     .thenReturn(CONTAINER_ID);
             dockerExtension.beforeAll(new FakeContainerExtensionContext(OnePortTest.class));

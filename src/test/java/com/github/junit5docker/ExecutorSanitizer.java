@@ -3,7 +3,8 @@ package com.github.junit5docker;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.fail;
+
 
 final class ExecutorSanitizer {
 

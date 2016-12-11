@@ -12,7 +12,9 @@ import java.net.Socket;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 
 @Docker(image = "faustxvi/simple-two-ports", ports = @Port(exposed = 8080, inner = 8080),
         environments = {@Environment(key = "test", value = "42"), @Environment(key = "toRead", value = "theAnswer")})
@@ -42,11 +44,10 @@ public class StartDockerContainerWithEnvironmentVariableIT {
              PrintWriter out = new PrintWriter(container.getOutputStream(), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(container.getInputStream()))
         ) {
-            assertNotNull(container);
+            assertThat(container).isNotNull();
             out.println("GET /env HTTP/1.0\n\n");
             List<String> envs = in.lines().collect(Collectors.toList());
-            assertTrue(envs.contains("test=42"), "'test' environments variable not found");
-            assertTrue(envs.contains("toRead=theAnswer"), "'toRead' environments variable not found");
+            assertThat(envs).contains("test=42", "toRead=theAnswer");
         } catch (IOException e) {
             fail("The port " + port + " should be listening");
         }
