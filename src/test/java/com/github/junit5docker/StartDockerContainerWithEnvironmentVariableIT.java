@@ -1,16 +1,15 @@
 package com.github.junit5docker;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -36,20 +35,18 @@ public class StartDockerContainerWithEnvironmentVariableIT {
     }
 
     private void checkConnectionsToContainer() {
-        checkConnectionToContainer(8080);
+        checkConnectionToContainer();
     }
 
-    private void checkConnectionToContainer(int port) {
-        try (Socket container = new Socket("localhost", port);
-             PrintWriter out = new PrintWriter(container.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(container.getInputStream()))
+    private void checkConnectionToContainer() {
+        try (CloseableHttpResponse container = HttpClientBuilder.create().build()
+                .execute(new HttpGet("http://localhost:8080/env"))
         ) {
             assertThat(container).isNotNull();
-            out.println("GET /env HTTP/1.0\n\n");
-            List<String> envs = in.lines().collect(Collectors.toList());
+            String[] envs = EntityUtils.toString(container.getEntity()).split("\\n");
             assertThat(envs).contains("test=42", "toRead=theAnswer");
         } catch (IOException e) {
-            fail("The port " + port + " should be listening");
+            fail("The port 8080 should be listening");
         }
     }
 }
