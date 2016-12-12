@@ -2,7 +2,7 @@ package com.github.junit5docker;
 
 import java.util.Objects;
 
-class PortBinding {
+final class PortBinding {
 
     final int exposed;
 
@@ -16,7 +16,7 @@ class PortBinding {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof PortBinding)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         PortBinding that = (PortBinding) o;
         return exposed == that.exposed &&
                 inner == that.inner;
