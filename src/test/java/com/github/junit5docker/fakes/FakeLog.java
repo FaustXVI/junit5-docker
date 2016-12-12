@@ -21,6 +21,10 @@ public class FakeLog implements Iterator<String> {
         this.waitedLog = waitedLog;
     }
 
+    public static Stream<String> unfoundableLog(){
+        return fakeLog(new AtomicBoolean(false), "");
+    }
+
     public static Stream<String> fakeLog(AtomicBoolean started, String waitedLog) {
         return stream(spliteratorUnknownSize(new FakeLog(started, waitedLog), 0), false);
     }

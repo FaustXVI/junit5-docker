@@ -8,10 +8,7 @@ import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
@@ -19,15 +16,16 @@ import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.ExecutorSanitizer.verifyAssertionError;
 import static com.github.junit5docker.WaitFor.NOTHING;
 import static com.github.junit5docker.fakes.FakeLog.fakeLog;
+import static com.github.junit5docker.fakes.FakeLog.unfoundableLog;
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 public class DockerExtensionTest {
 
@@ -89,6 +87,27 @@ public class DockerExtensionTest {
                 ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNotPresentLogTest.class);
                 sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
             }).withMessageContaining("not found");
+        }
+
+        @Test
+        public void beInterruptible() throws Throwable {
+            ContainerExtensionContext context = new FakeContainerExtensionContext(InterruptionTest.class);
+            Thread mainThread = Thread.currentThread();
+            CountDownLatch logRequest = new CountDownLatch(1);
+            when(dockerClient.logs(argThat(argument -> true))).thenAnswer(mock -> {
+                logRequest.countDown();
+                return unfoundableLog();
+            });
+            CompletableFuture<Void> voidCompletableFuture = runAsync(ignoreInterrupted(() -> {
+                boolean await = logRequest.await(500, TimeUnit.MILLISECONDS);
+                if (!await) {
+                    throw new AssertionError("should have ask for logs");
+                }
+                mainThread.interrupt();
+            }));
+            dockerExtension.beforeAll(context);
+            assertThat(Thread.interrupted()).overridingErrorMessage("Interrupted thread should still interrupted").isTrue();
+            verifyAssertionError(voidCompletableFuture::get);
         }
 
         private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws Throwable {
@@ -181,5 +200,10 @@ public class DockerExtensionTest {
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
             waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 200))
     private static class WaitForNotPresentLogTest {
+    }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
+            waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 2000))
+    private static class InterruptionTest {
     }
 }

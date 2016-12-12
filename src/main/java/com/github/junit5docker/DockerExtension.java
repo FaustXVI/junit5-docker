@@ -6,6 +6,9 @@ import org.junit.jupiter.api.extension.ContainerExtensionContext;
 
 import java.util.HashMap;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
+
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
@@ -36,27 +39,24 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback {
         String expectedLog = waitFor.value();
         if (!WaitFor.NOTHING.equals(expectedLog)) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            Future<Boolean> booleanFuture = executor.submit(findFirstLogContaining(expectedLog));
+            CompletableFuture<Boolean> logFound = supplyAsync(findFirstLogContaining(expectedLog), executor);
             executor.shutdown();
             try {
                 boolean termination = executor.awaitTermination(waitFor.timeoutInMillis(), TimeUnit.MILLISECONDS);
                 if (!termination) {
                     throw new AssertionError("Timeout while waiting for log : \"" + expectedLog + "\"");
                 }
-                if (!booleanFuture.get()) {
+                if (!logFound.getNow(false)) {
                     throw new AssertionError("\"" + expectedLog + "\" not found in logs and container stopped");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } catch (ExecutionException e) {
-                throw new AssertionError("Should never append : probably a junit-docker bug", e);
             }
         }
     }
 
-    private Callable<Boolean> findFirstLogContaining(String logToFind) {
-        return () -> dockerClient.logs(containerID).filter(log -> log.contains(logToFind))
-                .findFirst().isPresent();
+    private Supplier<Boolean> findFirstLogContaining(String logToFind) {
+        return () -> dockerClient.logs(containerID).anyMatch(log -> log.contains(logToFind));
     }
 
     private Docker findDockerAnnotation(ContainerExtensionContext containerExtensionContext) {
