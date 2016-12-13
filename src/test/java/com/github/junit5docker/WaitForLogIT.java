@@ -34,9 +34,9 @@ public class WaitForLogIT {
     }
 
     private void checkConnectionToContainer() {
-        try (CloseableHttpResponse execute = HttpClientBuilder.create().build()
+        try (CloseableHttpResponse container = HttpClientBuilder.create().build()
                 .execute(new HttpGet("http://localhost:8801"))) {
-            assertThat(execute).isNotNull();
+            assertThat(container).isNotNull();
         } catch (IOException e) {
             fail("The port 8801 should be listening");
         }
