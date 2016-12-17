@@ -31,6 +31,11 @@ function create_documentation {
     fi
     mkdir -p ${DOCUMENTATION_FOLDER}/${VERSION}
     mv target/test-classes/documentation/* ${DOCUMENTATION_FOLDER}/${VERSION}
+    for file in ${DOCUMENTATION_FOLDER}/${VERSION}/*.feature
+    do
+        cat $file | awk -f .travis/feature-to-markdown.awk > ${file%%.feature}.md
+        rm $file
+    done
 }
 
 function create_javadoc {
