@@ -65,7 +65,7 @@ public class MyAwesomeTest {
 
   When you run your test :
 
-  * the container "faustxvi/simple-two-ports" is started before running your tests
+  * the container "faustxvi/simple-two-ports" is started before running your tests using the version "latest"
   * the port 8801 is bound to the container's port 8080 so you can exchange through this port
   * the container is stopped and removed after your tests
 
@@ -96,5 +96,5 @@ public class MyAwesomeTest {
  When you run your test :
 
  * the container is started with the given environment variables
- * the tests are started only after the string "started" is found in the container's logs
+ * the tests are started only after the string "mysqld: ready for connections" is found in the container's logs
  

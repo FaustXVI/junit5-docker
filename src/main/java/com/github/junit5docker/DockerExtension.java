@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
-class DockerExtension implements BeforeAllCallback, AfterAllCallback {
+public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
     private final DockerClientAdapter dockerClient;
 
@@ -20,7 +20,7 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback {
         this(new DefaultDockerClient());
     }
 
-    DockerExtension(DockerClientAdapter dockerClient) {
+    public DockerExtension(DockerClientAdapter dockerClient) {
         this.dockerClient = dockerClient;
     }
 
@@ -88,7 +88,7 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     @Override
-    public void afterAll(ContainerExtensionContext containerExtensionContext) throws Exception {
+    public void afterAll(ContainerExtensionContext containerExtensionContext) {
         dockerClient.stopAndRemoveContainer(containerID);
     }
 }
