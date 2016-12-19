@@ -18,8 +18,8 @@ final class PortBinding {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PortBinding that = (PortBinding) o;
-        return exposed == that.exposed &&
-                inner == that.inner;
+        return exposed == that.exposed
+                && inner == that.inner;
     }
 
     @Override

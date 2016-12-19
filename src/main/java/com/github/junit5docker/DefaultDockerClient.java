@@ -40,8 +40,8 @@ class DefaultDockerClient implements DockerClientAdapter {
     }
 
     @Override
-    public Stream<String> logs(String containerID) {
-        return dockerClient.logContainerCmd(containerID).withFollowStream(true)
+    public Stream<String> logs(String containerId) {
+        return dockerClient.logContainerCmd(containerId).withFollowStream(true)
                 .withStdOut(true)
                 .withStdErr(true)
                 .exec(new StreamLog())
@@ -49,11 +49,12 @@ class DefaultDockerClient implements DockerClientAdapter {
     }
 
     private String createContainer(String wantedImage, Ports bindings, List<String> environmentStrings) {
-        if (!wantedImage.contains(":")) {
-            wantedImage += ":latest";
+        String imageWithVersion = wantedImage;
+        if (!imageWithVersion.contains(":")) {
+            imageWithVersion += ":latest";
         }
-        this.ensureImageExists(wantedImage);
-        return dockerClient.createContainerCmd(wantedImage)
+        this.ensureImageExists(imageWithVersion);
+        return dockerClient.createContainerCmd(imageWithVersion)
                 .withEnv(environmentStrings)
                 .withPortBindings(bindings)
                 .exec().getId();

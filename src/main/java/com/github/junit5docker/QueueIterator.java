@@ -8,13 +8,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static java.lang.Thread.currentThread;
 
 class QueueIterator implements Iterator<String>, AutoCloseable {
+
+    private static final int POLL_TIMEOUT = 10;
+
     private final AtomicBoolean opened;
 
     private final BlockingQueue<String> lines;
 
     private String lineRead;
 
-    public QueueIterator(BlockingQueue<String> lines) {
+    QueueIterator(BlockingQueue<String> lines) {
         this.opened = new AtomicBoolean(true);
         this.lines = lines;
     }
@@ -23,7 +26,7 @@ class QueueIterator implements Iterator<String>, AutoCloseable {
     public boolean hasNext() {
         while (opened.get() && lineRead == null) {
             try {
-                lineRead = lines.poll(10, TimeUnit.MILLISECONDS);
+                lineRead = lines.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 opened.set(false);
                 currentThread().interrupt();
@@ -34,9 +37,9 @@ class QueueIterator implements Iterator<String>, AutoCloseable {
 
     @Override
     public String next() {
-        String lineRead = this.lineRead;
-        this.lineRead = null;
-        return lineRead;
+        String result = lineRead;
+        lineRead = null;
+        return result;
     }
 
     @Override
