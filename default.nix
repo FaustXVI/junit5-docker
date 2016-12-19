@@ -16,4 +16,5 @@ pkgs.stdenv.mkDerivation rec {
       pkgs.maven
       pkgs.docker
   ];
+  MAVEN_OPTS = "-Djvm=${pkgs.openjdk}/bin/java";
 }
