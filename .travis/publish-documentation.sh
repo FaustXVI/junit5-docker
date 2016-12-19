@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 DOCS_FOLDER=docs
 DOCUMENTATION_FOLDER=${DOCS_FOLDER}/documentation
