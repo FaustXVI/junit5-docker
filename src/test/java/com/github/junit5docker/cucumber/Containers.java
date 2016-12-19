@@ -14,15 +14,23 @@ import java.util.stream.Stream;
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class Containers {
-    private final DockerClient dockerClient = DockerClientBuilder.getInstance(createDefaultConfigBuilder().withApiVersion("1.22")).build();
+public class Containers {
+
+    private final DockerClient dockerClient = DockerClientBuilder
+            .getInstance(createDefaultConfigBuilder().withApiVersion("1.22"))
+            .build();
+
     private List<Container> existingContainers;
+
     private List<Container> containersStartedByExtension;
+
     private List<Container> remainingContainers;
+
     private List<InspectContainerResponse> containersInspect;
+
     private List<LogCallback> logs;
 
-    Containers() {
+    public Containers() {
         existingContainers = dockerClient.listContainersCmd().exec();
     }
 
@@ -83,7 +91,7 @@ class Containers {
 
     private static class LogCallback extends LogContainerResultCallback {
 
-        StringBuilder logs = new StringBuilder();
+        private StringBuilder logs = new StringBuilder();
 
         @Override
         public void onNext(Frame item) {

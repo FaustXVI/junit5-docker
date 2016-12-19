@@ -8,7 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
@@ -80,15 +85,7 @@ public class StreamLogTest {
         }));
         Stream<String> logs = streamLog.stream().peek((l) -> streamStarted.countDown());
         streamRequested.countDown();
-        Future<?> streamCompleted = executor.submit(ignoreInterrupted(() -> {
-            try {
-                assertThat(streamStarted.await(100, MILLISECONDS))
-                        .overridingErrorMessage("Stream should have been started")
-                        .isTrue();
-            } finally {
-                streamLog.onComplete();
-            }
-        }));
+        Future<?> streamCompleted = executor.submit(ignoreInterrupted(completeStreamOnceStarted(streamStarted)));
         Future<?> haveLogs = executor.submit(() -> assertThat(logs).contains("added line"));
         verifyAssertionError(streamCompleted::get);
         try {
@@ -96,6 +93,18 @@ public class StreamLogTest {
         } catch (TimeoutException e) {
             fail("Stream should have closed");
         }
+    }
+
+    private ExecutorSanitizer.InterruptibleRunnable completeStreamOnceStarted(CountDownLatch streamStarted) {
+        return () -> {
+            try {
+                assertThat(streamStarted.await(100, MILLISECONDS))
+                        .overridingErrorMessage("Stream should have been started")
+                        .isTrue();
+            } finally {
+                streamLog.onComplete();
+            }
+        };
     }
 
     @Test

@@ -8,9 +8,17 @@ import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.PullImageResultCallback;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,11 +34,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("Default docker client's ")
 public class DefaultDockerClientIT {
 
-    public static final int DEFAULT_DOCKER_ENV_NUMBER = 1;
+    private static final int DEFAULT_DOCKER_ENV_NUMBER = 1;
 
     private DefaultDockerClient defaultDockerClient = new DefaultDockerClient();
 
-    private DockerClient dockerClient = DockerClientBuilder.getInstance(createDefaultConfigBuilder().withApiVersion("1.22")).build();
+    private DockerClient dockerClient = DockerClientBuilder
+            .getInstance(createDefaultConfigBuilder().withApiVersion("1.22"))
+            .build();
 
     private List<Container> existingContainers;
 
@@ -64,6 +74,7 @@ public class DefaultDockerClientIT {
         @Nested
         @DisplayName("with image already pulled should")
         class WithImageAlreadyPulled {
+
             private static final String WANTED_IMAGE = "faustxvi/simple-two-ports:latest";
 
             @BeforeEach
@@ -83,8 +94,8 @@ public class DefaultDockerClientIT {
             @Test
             @DisplayName("start a container with one port")
             public void shouldStartContainerWithOnePort() {
-                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap(), new PortBinding
-                        (8081, 8080));
+                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap(),
+                        new PortBinding(8081, 8080));
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 Ports ports = startedContainer.getHostConfig().getPortBindings();
                 assertThat(ports).isNotNull();
@@ -113,6 +124,7 @@ public class DefaultDockerClientIT {
         @Nested
         @DisplayName("with image not pulled should")
         class WithImageNotPulled {
+
             private static final String WANTED_IMAGE = "faustxvi/simple-two-ports:latest";
 
             @BeforeEach
@@ -154,24 +166,25 @@ public class DefaultDockerClientIT {
     @Nested
     @DisplayName("stopAndRemove method")
     class StopAndRemoveContainerMethod {
+
         private static final String WANTED_IMAGE = "faustxvi/simple-two-ports:latest";
 
-        private String containerID;
+        private String containerId;
 
         @BeforeEach
         public void startAContainer() {
             ensureImageExists(WANTED_IMAGE);
-            containerID = dockerClient.createContainerCmd(WANTED_IMAGE).exec().getId();
-            dockerClient.startContainerCmd(containerID).exec();
+            containerId = dockerClient.createContainerCmd(WANTED_IMAGE).exec().getId();
+            dockerClient.startContainerCmd(containerId).exec();
         }
 
         @Test
         @DisplayName("should remove the container")
         public void shouldRemoveTheContainer() {
-            defaultDockerClient.stopAndRemoveContainer(containerID);
+            defaultDockerClient.stopAndRemoveContainer(containerId);
             assertThat(dockerClient.listContainersCmd().exec()).hasSize(existingContainers.size());
             assertThatExceptionOfType(NotFoundException.class)
-                    .isThrownBy(() -> dockerClient.inspectContainerCmd(containerID).exec());
+                    .isThrownBy(() -> dockerClient.inspectContainerCmd(containerId).exec());
         }
     }
 
@@ -182,9 +195,10 @@ public class DefaultDockerClientIT {
         @Nested
         @DisplayName("with a working image")
         class WithAWorkingImage {
+
             private static final String WANTED_IMAGE = "faustxvi/open-port-later";
 
-            private String containerID;
+            private String containerId;
 
             @BeforeEach
             public void startAContainer() {
@@ -193,14 +207,14 @@ public class DefaultDockerClientIT {
 
             @Test
             public void shouldGiveLogsInStream() {
-                containerID = dockerClient.createContainerCmd(WANTED_IMAGE).withEnv(singletonList("WAITING_TIME=1ms"))
+                containerId = dockerClient.createContainerCmd(WANTED_IMAGE).withEnv(singletonList("WAITING_TIME=1ms"))
                         .exec()
                         .getId();
-                dockerClient.startContainerCmd(containerID).exec();
-                Stream<String> logs = defaultDockerClient.logs(containerID);
+                dockerClient.startContainerCmd(containerId).exec();
+                Stream<String> logs = defaultDockerClient.logs(containerId);
                 Optional<String> firstLine = logs.findFirst();
                 assertThat(firstLine).isPresent()
-                .hasValueSatisfying("started"::equals);
+                        .hasValueSatisfying("started"::equals);
             }
         }
 
@@ -210,21 +224,21 @@ public class DefaultDockerClientIT {
 
             private static final String WANTED_IMAGE = "faustxvi/log-and-quit";
 
-            private String containerID;
+            private String containerId;
 
             @BeforeEach
             public void startAContainer() {
                 ensureImageExists(WANTED_IMAGE);
-                containerID = dockerClient.createContainerCmd(WANTED_IMAGE)
+                containerId = dockerClient.createContainerCmd(WANTED_IMAGE)
                         .exec()
                         .getId();
-                dockerClient.startContainerCmd(containerID).exec();
+                dockerClient.startContainerCmd(containerId).exec();
             }
 
             @Test
             @DisplayName("should close stream when logs finish")
             public void shouldCloseWhenContainerCloses() throws InterruptedException {
-                Stream<String> logs = defaultDockerClient.logs(containerID);
+                Stream<String> logs = defaultDockerClient.logs(containerId);
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 CountDownLatch streamReadStarted = new CountDownLatch(1);
                 CountDownLatch streamClosed = new CountDownLatch(1);
