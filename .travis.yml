@@ -8,6 +8,7 @@ script: mvn verify
 after_success:
     - .travis/publish-documentation.sh
     - .travis/deploy-snapshot
+    - bash <(curl -s https://codecov.io/bash)
 branches:
     only:
         - master
