@@ -16,11 +16,11 @@ import static com.github.dockerjava.api.model.Ports.Binding.bindPort;
 import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
 import static java.util.stream.Collectors.toList;
 
-public class DefaultDockerClient implements DockerClientAdapter {
+class DefaultDockerClient implements DockerClientAdapter {
 
     private final DockerClient dockerClient;
 
-    public DefaultDockerClient() {
+    DefaultDockerClient() {
         dockerClient = DockerClientBuilder.getInstance(createDefaultConfigBuilder().withApiVersion("1.22")).build();
     }
 

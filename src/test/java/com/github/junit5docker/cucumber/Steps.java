@@ -1,6 +1,5 @@
 package com.github.junit5docker.cucumber;
 
-import com.github.junit5docker.DefaultDockerClient;
 import com.github.junit5docker.Docker;
 import com.github.junit5docker.DockerExtension;
 import com.github.junit5docker.WaitFor;
@@ -29,7 +28,7 @@ public class Steps implements En {
 
     private Containers containers = new Containers();
 
-    private final DockerExtension dockerExtension = new DockerExtension(new DefaultDockerClient());
+    private final DockerExtension dockerExtension = new DockerExtension();
 
     private AtomicReference<Class<?>> testClass = new AtomicReference<>();
 
