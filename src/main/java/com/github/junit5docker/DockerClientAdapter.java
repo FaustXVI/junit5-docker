@@ -8,5 +8,5 @@ interface DockerClientAdapter {
 
     void stopAndRemoveContainer(String containerId);
 
-    Stream<String> logs(String containerID);
+    Stream<String> logs(String containerId);
 }

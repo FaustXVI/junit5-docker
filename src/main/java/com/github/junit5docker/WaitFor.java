@@ -12,7 +12,12 @@ public @interface WaitFor {
      * If used, JUnit-docker does not wait for anything and just start the tests.</p>
      * <p>This is the default value in {@link Docker}</p>
      */
-    String NOTHING = "";
+    static final String NOTHING = "";
+
+    /**
+     * The default timeout duration.
+     */
+    static final int DEFAULT_TIMEOUT = 10 * 1000;
 
     /**
      * @return the log text to wait for.
@@ -22,5 +27,5 @@ public @interface WaitFor {
     /**
      * @return the time in milliseconds to wait for the log before giving up.
      */
-    int timeoutInMillis() default 10 * 1000;
+    int timeoutInMillis() default DEFAULT_TIMEOUT;
 }

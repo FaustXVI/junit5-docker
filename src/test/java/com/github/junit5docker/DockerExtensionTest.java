@@ -8,7 +8,12 @@ import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
@@ -25,7 +30,9 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class DockerExtensionTest {
 
@@ -42,25 +49,28 @@ public class DockerExtensionTest {
         public void startContainerWithOnePort() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OnePortTest.class);
             dockerExtension.beforeAll(context);
-            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), eq(new PortBinding(8801, 8800)));
+            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
+                eq(new PortBinding(8801, 8800)));
         }
 
         @Test
         public void startContainerWithMultiplePorts() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(MultiplePortTest.class);
             dockerExtension.beforeAll(context);
-            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), eq(new PortBinding(8801, 8800)),
-                    eq(new PortBinding(9901, 9900)));
+            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
+                eq(new PortBinding(8801, 8800)),
+                eq(new PortBinding(9901, 9900)));
         }
 
         @Test
         public void waitForLogToAppear() throws Throwable {
             ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForLogTest.class);
-            long duration = sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
+            long duration = sendLogAndTimeExecution(100,
+                TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
             assertThat(duration)
-                    .overridingErrorMessage("Should have waited for log to appear during %d ms but waited %d ms", 100,
-                            duration)
-                    .isGreaterThanOrEqualTo(100);
+                .overridingErrorMessage("Should have waited for log to appear during %d ms but waited %d ms", 100,
+                    duration)
+                .isGreaterThanOrEqualTo(100);
         }
 
         @Test
@@ -85,7 +95,8 @@ public class DockerExtensionTest {
         public void throwsExceptionIfLogNotFoundAndLogsEnded() {
             assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
                 ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNotPresentLogTest.class);
-                sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
+                sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS,
+                    () -> dockerExtension.beforeAll(context));
             }).withMessageContaining("not found");
         }
 
@@ -99,14 +110,15 @@ public class DockerExtensionTest {
                 return unfoundableLog();
             });
             CompletableFuture<Void> voidCompletableFuture = runAsync(ignoreInterrupted(() -> {
-                boolean await = logRequest.await(500, TimeUnit.MILLISECONDS);
-                if (!await) {
+                if (!logRequest.await(500, TimeUnit.MILLISECONDS)) {
                     throw new AssertionError("should have ask for logs");
                 }
                 mainThread.interrupt();
             }));
             dockerExtension.beforeAll(context);
-            assertThat(Thread.interrupted()).overridingErrorMessage("Interrupted thread should still interrupted").isTrue();
+            assertThat(Thread.interrupted())
+                .overridingErrorMessage("Interrupted thread should still interrupted")
+                .isTrue();
             verifyAssertionError(voidCompletableFuture::get);
         }
 
@@ -118,8 +130,8 @@ public class DockerExtensionTest {
             long duration = System.currentTimeMillis() - callTime;
             executor.shutdown();
             assertThat(executor.awaitTermination(waitingTime * 2, timeUnit))
-                    .overridingErrorMessage("execution should have finished")
-                    .isTrue();
+                .overridingErrorMessage("execution should have finished")
+                .isTrue();
             verifyAssertionError(logSent::get);
             return duration;
         }
@@ -138,15 +150,20 @@ public class DockerExtensionTest {
         public void startContainerWithEnvironmentVariables() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OneEnvironmentTest.class);
             dockerExtension.beforeAll(context);
-            ArgumentCaptor<Map<String, String>> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, String>> mapArgumentCaptor = getMapArgumentCaptor();
             verify(dockerClient).startContainer(eq("wantedImage"),
-                    mapArgumentCaptor.capture(), any(PortBinding[].class));
+                mapArgumentCaptor.capture(), any());
             Map<String, String> environment = mapArgumentCaptor.getValue();
             assertThat(environment)
-                    .hasSize(1)
-                    .containsKeys("toTest")
-                    .containsValues("myValue");
+                .hasSize(1)
+                .containsKeys("toTest")
+                .containsValues("myValue");
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<Map<String, String>> getMapArgumentCaptor() {
+        return ArgumentCaptor.forClass(Map.class);
     }
 
     @Nested
@@ -157,8 +174,8 @@ public class DockerExtensionTest {
         @BeforeEach
         public void callBefore() {
             when(dockerClient.startContainer(anyString(), anyMap(),
-                    any(PortBinding[].class)))
-                    .thenReturn(CONTAINER_ID);
+                any()))
+                .thenReturn(CONTAINER_ID);
             dockerExtension.beforeAll(new FakeContainerExtensionContext(OnePortTest.class));
         }
 
@@ -172,38 +189,46 @@ public class DockerExtensionTest {
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800))
     private static class OnePortTest {
+
     }
 
     @Docker(image = "wantedImage", ports = {@Port(exposed = 8801, inner = 8800), @Port(exposed = 9901, inner = 9900)})
     private static class MultiplePortTest {
+
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-            environments = @Environment(key = "toTest", value = "myValue"))
+        environments = @Environment(key = "toTest", value = "myValue"))
     private static class OneEnvironmentTest {
+
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800), waitFor = @WaitFor(WAITED_LOG))
     private static class WaitForLogTest {
+
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-            waitFor = @WaitFor(value = WAITED_LOG, timeoutInMillis = 10))
+        waitFor = @WaitFor(value = WAITED_LOG, timeoutInMillis = 10))
     private static class TimeoutTest {
+
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-            waitFor = @WaitFor(value = NOTHING, timeoutInMillis = 10))
+        waitFor = @WaitFor(value = NOTHING, timeoutInMillis = 10))
     private static class WaitForNothingTest {
+
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-            waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 200))
+        waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 200))
     private static class WaitForNotPresentLogTest {
+
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-            waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 2000))
+        waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 2000))
     private static class InterruptionTest {
+
     }
 }

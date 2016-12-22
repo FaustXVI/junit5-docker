@@ -12,6 +12,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <junit.jupiter.version>5.0.0-M2</junit.jupiter.version>
         <junit.platform.version>1.0.0-M2</junit.platform.version>
@@ -44,6 +45,7 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <!--<compilerArgument>-Werror</compilerArgument>-->
                 </configuration>
             </plugin>
             <plugin>
@@ -166,6 +168,7 @@
                         <unusedDeclaredDependency>org.junit.jupiter</unusedDeclaredDependency>
                         <unusedDeclaredDependency>org.junit.platform</unusedDeclaredDependency>
                         <unusedDeclaredDependency>ch.qos.logback</unusedDeclaredDependency>
+                        <unusedDeclaredDependency>info.cukes:cucumber-picocontainer</unusedDeclaredDependency>
                     </ignoredUnusedDeclaredDependencies>
                 </configuration>
             </plugin>
@@ -259,21 +262,34 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>2.17</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>check-style</id>
+                        <id>check-style-production</id>
                         <phase>verify</phase>
-                        <configuration>
-                            <configLocation>checkstyle.xml</configLocation>
-                            <encoding>UTF-8</encoding>
-                            <consoleOutput>true</consoleOutput>
-                            <failsOnError>true</failsOnError>
-                            <linkXRef>false</linkXRef>
-                        </configuration>
                         <goals>
                             <goal>check</goal>
                         </goals>
+                        <configuration>
+                            <configLocation>checkstyle.xml</configLocation>
+                        </configuration>
                     </execution>
+                    <execution>
+                        <id>check-style-tests</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <configLocation>checkstyle-tests.xml</configLocation>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        </configuration>
+                    </execution>
+
                 </executions>
             </plugin>
         </plugins>
@@ -366,6 +382,12 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>info.cukes</groupId>
+            <artifactId>cucumber-picocontainer</artifactId>
+            <version>1.2.5</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

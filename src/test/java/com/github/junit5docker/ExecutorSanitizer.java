@@ -8,6 +8,9 @@ import static org.assertj.core.api.Assertions.fail;
 
 final class ExecutorSanitizer {
 
+    private ExecutorSanitizer() {
+    }
+
     @FunctionalInterface
     interface InterruptibleRunnable {
 
@@ -28,6 +31,7 @@ final class ExecutorSanitizer {
 
     @FunctionalInterface
     interface InterruptibleSupplier<T> {
+
         T get() throws InterruptedException;
     }
 
@@ -45,6 +49,7 @@ final class ExecutorSanitizer {
 
     @FunctionalInterface
     interface ThrowableSupplier<T> {
+
         T get() throws Exception;
     }
 
@@ -52,8 +57,7 @@ final class ExecutorSanitizer {
         try {
             return o.get();
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof AssertionError)
-                throw e.getCause();
+            if (e.getCause() instanceof AssertionError) throw e.getCause();
             else throw e;
         }
     }

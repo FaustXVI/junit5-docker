@@ -8,14 +8,16 @@ package com.github.junit5docker;
 public @interface Port {
 
     /**
-     * @return the port number exposed on the host.
      * This is the port number to use in the test code for data exchange with the container.
+     *
+     * @return the port number exposed on the host.
      */
     int exposed();
 
     /**
-     * @return the port number declared by the container.
      * This is the port number used by the application inside the container.
+     *
+     * @return the port number declared by the container.
      */
     int inner();
 }

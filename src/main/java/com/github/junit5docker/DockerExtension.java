@@ -5,7 +5,11 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 
 import java.util.HashMap;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -19,10 +23,10 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
     private final DockerClientAdapter dockerClient;
 
-    private String containerID;
+    private String containerId;
 
     /**
-     * Default constructor used by JUnit5 extension system
+     * Default constructor used by JUnit5 extension system.
      *
      * @since 1.0
      */
@@ -38,10 +42,10 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
     public void beforeAll(ContainerExtensionContext containerExtensionContext) {
         Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
         PortBinding[] portBindings = createPortBindings(dockerAnnotation);
-        HashMap<String, String> environmentMap = createEnvironmentMap(dockerAnnotation);
+        Map<String, String> environmentMap = createEnvironmentMap(dockerAnnotation);
         String imageReference = findImageName(dockerAnnotation);
         WaitFor waitFor = dockerAnnotation.waitFor();
-        containerID = dockerClient.startContainer(imageReference, environmentMap, portBindings);
+        containerId = dockerClient.startContainer(imageReference, environmentMap, portBindings);
         waitForLogAccordingTo(waitFor);
     }
 
@@ -66,7 +70,7 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     private Supplier<Boolean> findFirstLogContaining(String logToFind) {
-        return () -> dockerClient.logs(containerID).anyMatch(log -> log.contains(logToFind));
+        return () -> dockerClient.logs(containerId).anyMatch(log -> log.contains(logToFind));
     }
 
     private Docker findDockerAnnotation(ContainerExtensionContext containerExtensionContext) {
@@ -78,8 +82,8 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
         return dockerAnnotation.image();
     }
 
-    private HashMap<String, String> createEnvironmentMap(Docker dockerAnnotation) {
-        HashMap<String, String> environmentMap = new HashMap<>();
+    private Map<String, String> createEnvironmentMap(Docker dockerAnnotation) {
+        Map<String, String> environmentMap = new HashMap<>();
         Environment[] environments = dockerAnnotation.environments();
         for (Environment environment : environments) {
             environmentMap.put(environment.key(), environment.value());
@@ -99,6 +103,6 @@ public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
     @Override
     public void afterAll(ContainerExtensionContext containerExtensionContext) {
-        dockerClient.stopAndRemoveContainer(containerID);
+        dockerClient.stopAndRemoveContainer(containerId);
     }
 }

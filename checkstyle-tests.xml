@@ -31,7 +31,6 @@
         <!-- Class design -->
         <module name="FinalClass"/>
         <module name="HideUtilityClassConstructor"/>
-        <module name="InnerTypeLast"/>
         <module name="InterfaceIsType"/>
         <module name="MutableException"/>
         <module name="OneTopLevelClass"/>
@@ -53,17 +52,11 @@
             <property name="ignoreConstructorParameter" value="true"/>
             <property name="ignoreSetter" value="true"/>
         </module>
-        <module name="IllegalCatch"/>
-        <module name="IllegalThrows"/>
         <module name="IllegalToken"/>
         <module name="IllegalType"/>
         <module name="InnerAssignment"/>
-        <module name="MagicNumber"/>
         <module name="MissingSwitchDefault"/>
         <module name="ModifiedControlVariable"/>
-        <module name="MultipleStringLiterals">
-            <property name="ignoreStringsRegexp" value='^(("")|(" ?, ?")|(".")|("\\."))$'/>
-        </module>
         <module name="MultipleVariableDeclarations"/>
         <module name="NestedForDepth"/>
         <module name="NestedIfDepth"/>
@@ -77,7 +70,6 @@
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
-        <module name="VariableDeclarationUsageDistance"/>
 
         <!-- Imports -->
         <module name="AvoidStarImport"/>
@@ -91,21 +83,6 @@
         </module>
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
-
-        <!-- Javadoc -->
-        <module name="JavadocStyle"/>
-        <module name="NonEmptyAtclauseDescription"/>
-        <module name="SingleLineJavadoc"/>
-        <module name="SummaryJavadocCheck"/>
-        <module name="JavadocMethod">
-            <property name="scope" value="protected"/>
-        </module>
-        <module name="JavadocType">
-            <property name="scope" value="protected"/>
-        </module>
-        <module name="JavadocVariable">
-            <property name="scope" value="protected"/>
-        </module>
 
         <!-- Metrics -->
         <module name="BooleanExpressionComplexity">
@@ -147,6 +124,7 @@
         <!-- Naming conventions -->
         <module name="AbbreviationAsWordInName">
             <property name="allowedAbbreviationLength" value="1"/>
+            <property name="allowedAbbreviations" value="IT"/>
         </module>
         <module name="ClassTypeParameterName"/>
         <module name="ConstantName"/>

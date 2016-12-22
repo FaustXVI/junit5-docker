@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
-public class FakeLog implements Iterator<String> {
+public final class FakeLog implements Iterator<String> {
 
     private final AtomicBoolean started;
 
@@ -21,7 +21,7 @@ public class FakeLog implements Iterator<String> {
         this.waitedLog = waitedLog;
     }
 
-    public static Stream<String> unfoundableLog(){
+    public static Stream<String> unfoundableLog() {
         return fakeLog(new AtomicBoolean(false), "");
     }
 

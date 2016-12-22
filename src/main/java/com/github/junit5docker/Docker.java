@@ -12,8 +12,8 @@ import static com.github.junit5docker.WaitFor.NOTHING;
 /**
  * <p>This annotation is the junit-docker entry point.</p>
  *
- * <p>Adding this annotation to a test's class will start a docker container before running the tests and will be stop at the end of the tests.
- * This is done once per class.</p>
+ * <p>Adding this annotation to a test's class will start a docker container before running the tests and will be stop
+ * at the end of the tests. This is done once per class.</p>
  *
  * @since 1.0
  */
@@ -28,23 +28,20 @@ public @interface Docker {
     String image();
 
     /**
-     * @return the port mapping to send to docker.
-     * This is required since at least one port must be visible for the container to be useful.
-     *
+     * @return the port mapping to send to docker. This is required since at least one port must be visible for the
+     * container to be useful.
      * @see Port
      */
     Port[] ports();
 
     /**
      * @return the optional environment variables to pass to the docker container.
-     *
      * @see Environment
      */
     Environment[] environments() default {};
 
     /**
      * @return the optional log to wait for before running the tests.
-     *
      * @see WaitFor
      */
     WaitFor waitFor() default @WaitFor(NOTHING);
