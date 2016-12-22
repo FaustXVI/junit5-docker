@@ -124,16 +124,16 @@ public class DockerExtensionTest {
 
         private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws Throwable {
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            long callTime = System.currentTimeMillis();
+            long callTime = System.nanoTime();
             Future<?> logSent = sendLogAfter(waitingTime, timeUnit, executor);
             runnable.run();
-            long duration = System.currentTimeMillis() - callTime;
+            long duration = System.nanoTime() - callTime;
             executor.shutdown();
             assertThat(executor.awaitTermination(waitingTime * 2, timeUnit))
                 .overridingErrorMessage("execution should have finished")
                 .isTrue();
             verifyAssertionError(logSent::get);
-            return duration;
+            return TimeUnit.NANOSECONDS.toMillis(duration);
         }
 
         private Future<?> sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
