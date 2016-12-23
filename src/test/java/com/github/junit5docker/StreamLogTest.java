@@ -16,6 +16,7 @@ import java.util.concurrent.Future;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
+import static com.github.junit5docker.assertions.ExecutorAssertions.assertThat;
 import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -134,8 +135,8 @@ public class StreamLogTest {
 
     private void interruptStream() throws InterruptedException {
         executor.shutdownNow();
-        assertThat(executor.awaitTermination(100, MILLISECONDS))
+        assertThat(executor)
             .overridingErrorMessage("Stream should have ended")
-            .isTrue();
+            .isShutedDownBefore(100, MILLISECONDS);
     }
 }

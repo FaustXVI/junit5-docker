@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.WaitFor.NOTHING;
 import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
+import static com.github.junit5docker.assertions.ExecutorAssertions.assertThat;
 import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static com.github.junit5docker.fakes.FakeLog.fakeLog;
 import static com.github.junit5docker.fakes.FakeLog.unfoundableLog;
@@ -162,9 +163,9 @@ public class DockerExtensionTest {
             private void shutDown(ExecutorService executor, int waitingTime, TimeUnit timeUnit)
                 throws InterruptedException {
                 executor.shutdown();
-                assertThat(executor.awaitTermination(waitingTime * 2, timeUnit))
+                assertThat(executor)
                     .overridingErrorMessage("execution should have finished")
-                    .isTrue();
+                    .isShutedDownBefore(waitingTime * 2, timeUnit);
             }
 
             private Future<?> sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
