@@ -153,12 +153,17 @@ public class DockerExtensionTest {
                 Future<?> logSent = sendLogAfter(waitingTime, timeUnit, executor);
                 runnable.run();
                 long duration = System.currentTimeMillis() - callTime;
+                shutDown(executor, waitingTime, timeUnit);
+                verifyAssertionError(logSent::get);
+                return duration;
+            }
+
+            private void shutDown(ExecutorService executor, int waitingTime, TimeUnit timeUnit)
+                throws InterruptedException {
                 executor.shutdown();
                 assertThat(executor.awaitTermination(waitingTime * 2, timeUnit))
                     .overridingErrorMessage("execution should have finished")
                     .isTrue();
-                verifyAssertionError(logSent::get);
-                return duration;
             }
 
             private Future<?> sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {

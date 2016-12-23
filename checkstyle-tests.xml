@@ -73,6 +73,7 @@
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
+        <module name="VariableDeclarationUsageDistance"/>
 
         <!-- Imports -->
         <module name="AvoidStarImport"/>

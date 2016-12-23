@@ -133,22 +133,23 @@ public class StreamLogTest {
 
     @Test
     public void shouldInterruptStreamWhenReadingThreadInterrupted() throws InterruptedException, ExecutionException {
-        CountDownLatch streamRequested = new CountDownLatch(1);
         CountDownLatch executionStarted = new CountDownLatch(1);
         Future<?> threadStillInterrupted = executor.submit(ignoreInterrupted(() -> {
-            streamRequested.await();
             executionStarted.countDown();
             streamLog.stream().collect(toList());
             assertThat(currentThread().isInterrupted())
                 .overridingErrorMessage("Thread should keep its interruption state")
                 .isTrue();
         }));
-        streamRequested.countDown();
         executionStarted.await();
+        interruptStream();
+        verifyAssertionError(threadStillInterrupted::get);
+    }
+
+    private void interruptStream() throws InterruptedException {
         executor.shutdownNow();
         assertThat(executor.awaitTermination(100, MILLISECONDS))
             .overridingErrorMessage("Stream should have ended")
             .isTrue();
-        verifyAssertionError(threadStillInterrupted::get);
     }
 }
