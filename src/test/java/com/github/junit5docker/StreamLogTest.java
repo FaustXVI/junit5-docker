@@ -13,8 +13,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
@@ -77,24 +75,11 @@ public class StreamLogTest {
     @Test
     public void shouldGiveAStreamContainingLineOfFrameFromOtherThread()
         throws ExecutionException, InterruptedException {
-        CountDownLatch streamRequested = new CountDownLatch(1);
         CountDownLatch streamStarted = new CountDownLatch(1);
-        executor.submit(ignoreInterrupted(() -> {
-            streamRequested.await();
-            streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes()));
-        }));
-        Stream<String> logs = streamLog.stream().peek((l) -> streamStarted.countDown());
-        streamRequested.countDown();
+        executor.submit(ignoreInterrupted(() -> streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes()))));
         Future<?> streamCompleted = executor.submit(ignoreInterrupted(completeStreamOnceStarted(streamStarted)));
-        Future<?> haveLogs = executor.submit(() -> assertThat(logs).contains("added line"));
+        assertThat(streamLog.stream().peek((l) -> streamStarted.countDown())).contains("added line");
         assertExecutionOf(streamCompleted::get).hasNoAssertionFailures();
-        assertExecutionOf(() -> {
-            try {
-                return haveLogs.get(100, MILLISECONDS);
-            } catch (TimeoutException e) {
-                throw new AssertionError("unexpected exception", e);
-            }
-        }).hasNoAssertionFailures();
     }
 
     private ExecutorSanitizer.InterruptibleRunnable completeStreamOnceStarted(CountDownLatch streamStarted) {
