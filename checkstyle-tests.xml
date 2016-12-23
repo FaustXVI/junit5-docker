@@ -53,6 +53,8 @@
             <property name="ignoreConstructorParameter" value="true"/>
             <property name="ignoreSetter" value="true"/>
         </module>
+        <module name="IllegalCatch"/>
+        <module name="IllegalThrows"/>
         <module name="IllegalToken"/>
         <module name="IllegalType"/>
         <module name="InnerAssignment"/>

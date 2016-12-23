@@ -34,11 +34,11 @@ final class ExecutorSanitizer {
         };
     }
 
-    static <T> T verifyAssertionError(ThrowableSupplier<T> o) throws Throwable {
+    static <T, E extends Exception> T verifyAssertionError(ThrowableSupplier<T, E> o) throws ExecutionException, E {
         try {
             return o.get();
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof AssertionError) throw e.getCause();
+            if (e.getCause() instanceof AssertionError) throw (AssertionError) e.getCause();
             else throw e;
         }
     }
@@ -56,8 +56,8 @@ final class ExecutorSanitizer {
     }
 
     @FunctionalInterface
-    interface ThrowableSupplier<T> {
+    interface ThrowableSupplier<T, E extends Exception> {
 
-        T get() throws Exception;
+        T get() throws ExecutionException, E;
     }
 }

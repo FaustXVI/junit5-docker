@@ -10,6 +10,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -63,17 +64,6 @@ public class DockerExtensionTest {
         }
 
         @Test
-        public void waitForLogToAppear() throws Throwable {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForLogTest.class);
-            long duration = sendLogAndTimeExecution(100,
-                TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
-            assertThat(duration)
-                .overridingErrorMessage("Should have waited for log to appear during %d ms but waited %d ms", 100,
-                    duration)
-                .isGreaterThanOrEqualTo(100);
-        }
-
-        @Test
         public void notWaitByDefault() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNothingTest.class);
             when(dockerClient.logs(anyString())).thenReturn(Stream.generate(ignoreInterrupted(() -> {
@@ -81,69 +71,6 @@ public class DockerExtensionTest {
                 return null;
             })));
             dockerExtension.beforeAll(context);
-        }
-
-        @Test
-        public void timeoutIfLogDoesNotAppear() {
-            assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
-                ContainerExtensionContext context = new FakeContainerExtensionContext(TimeoutTest.class);
-                sendLogAndTimeExecution(1, TimeUnit.SECONDS, () -> dockerExtension.beforeAll(context));
-            }).withMessageContaining("Timeout");
-        }
-
-        @Test
-        public void throwsExceptionIfLogNotFoundAndLogsEnded() {
-            assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
-                ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNotPresentLogTest.class);
-                sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS,
-                    () -> dockerExtension.beforeAll(context));
-            }).withMessageContaining("not found");
-        }
-
-        @Test
-        public void beInterruptible() throws Throwable {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(InterruptionTest.class);
-            Thread mainThread = Thread.currentThread();
-            CountDownLatch logRequest = new CountDownLatch(1);
-            when(dockerClient.logs(argThat(argument -> true))).thenAnswer(mock -> {
-                logRequest.countDown();
-                return unfoundableLog();
-            });
-            CompletableFuture<Void> voidCompletableFuture = runAsync(ignoreInterrupted(() -> {
-                if (!logRequest.await(500, TimeUnit.MILLISECONDS)) {
-                    throw new AssertionError("should have ask for logs");
-                }
-                mainThread.interrupt();
-            }));
-            dockerExtension.beforeAll(context);
-            assertThat(Thread.interrupted())
-                .overridingErrorMessage("Interrupted thread should still interrupted")
-                .isTrue();
-            verifyAssertionError(voidCompletableFuture::get);
-        }
-
-        private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable) throws Throwable {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            long callTime = System.currentTimeMillis();
-            Future<?> logSent = sendLogAfter(waitingTime, timeUnit, executor);
-            runnable.run();
-            long duration = System.currentTimeMillis() - callTime;
-            executor.shutdown();
-            assertThat(executor.awaitTermination(waitingTime * 2, timeUnit))
-                .overridingErrorMessage("execution should have finished")
-                .isTrue();
-            verifyAssertionError(logSent::get);
-            return duration;
-        }
-
-        private Future<?> sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
-            AtomicBoolean sendLog = new AtomicBoolean(false);
-            Stream<String> logStream = fakeLog(sendLog, WAITED_LOG);
-            when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
-            return executor.submit(ignoreInterrupted(() -> {
-                timeUnit.sleep(waitingTime);
-                sendLog.set(true);
-            }));
         }
 
         @Test
@@ -164,6 +91,87 @@ public class DockerExtensionTest {
         private ArgumentCaptor<Map<String, String>> getMapArgumentCaptor() {
             return ArgumentCaptor.forClass(Map.class);
         }
+
+        @Nested
+        class BeThreadSafe {
+
+            @Test
+            public void waitForLogToAppear() throws ExecutionException, InterruptedException {
+                ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForLogTest.class);
+                long duration = sendLogAndTimeExecution(100,
+                    TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
+                assertThat(duration)
+                    .overridingErrorMessage("Should have waited for log to appear during %d ms but waited %d ms", 100,
+                        duration)
+                    .isGreaterThanOrEqualTo(100);
+            }
+
+            @Test
+            public void timeoutIfLogDoesNotAppear() {
+                assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
+                    ContainerExtensionContext context = new FakeContainerExtensionContext(TimeoutTest.class);
+                    sendLogAndTimeExecution(1, TimeUnit.SECONDS, () -> dockerExtension.beforeAll(context));
+                }).withMessageContaining("Timeout");
+            }
+
+            @Test
+            public void throwsExceptionIfLogNotFoundAndLogsEnded() {
+                assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
+                    ContainerExtensionContext context =
+                        new FakeContainerExtensionContext(WaitForNotPresentLogTest.class);
+                    sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS,
+                        () -> dockerExtension.beforeAll(context));
+                }).withMessageContaining("not found");
+            }
+
+            @Test
+            public void beInterruptible() throws ExecutionException, InterruptedException {
+                ContainerExtensionContext context = new FakeContainerExtensionContext(InterruptionTest.class);
+                Thread mainThread = Thread.currentThread();
+                CountDownLatch logRequest = new CountDownLatch(1);
+                when(dockerClient.logs(argThat(argument -> true))).thenAnswer(mock -> {
+                    logRequest.countDown();
+                    return unfoundableLog();
+                });
+                CompletableFuture<Void> voidCompletableFuture = runAsync(ignoreInterrupted(() -> {
+                    if (!logRequest.await(500, TimeUnit.MILLISECONDS)) {
+                        throw new AssertionError("should have ask for logs");
+                    }
+                    mainThread.interrupt();
+                }));
+                dockerExtension.beforeAll(context);
+                assertThat(Thread.interrupted())
+                    .overridingErrorMessage("Interrupted thread should still interrupted")
+                    .isTrue();
+                verifyAssertionError(voidCompletableFuture::get);
+            }
+
+            private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable)
+                throws InterruptedException, ExecutionException {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                long callTime = System.currentTimeMillis();
+                Future<?> logSent = sendLogAfter(waitingTime, timeUnit, executor);
+                runnable.run();
+                long duration = System.currentTimeMillis() - callTime;
+                executor.shutdown();
+                assertThat(executor.awaitTermination(waitingTime * 2, timeUnit))
+                    .overridingErrorMessage("execution should have finished")
+                    .isTrue();
+                verifyAssertionError(logSent::get);
+                return duration;
+            }
+
+            private Future<?> sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
+                AtomicBoolean sendLog = new AtomicBoolean(false);
+                Stream<String> logStream = fakeLog(sendLog, WAITED_LOG);
+                when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
+                return executor.submit(ignoreInterrupted(() -> {
+                    timeUnit.sleep(waitingTime);
+                    sendLog.set(true);
+                }));
+            }
+        }
+
     }
 
     @Nested
@@ -180,7 +188,7 @@ public class DockerExtensionTest {
         }
 
         @Test
-        public void stopContainer() throws Exception {
+        public void stopContainer() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OnePortTest.class);
             dockerExtension.afterAll(context);
             verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
