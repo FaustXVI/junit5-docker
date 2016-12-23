@@ -1,13 +1,18 @@
 package com.github.junit5docker.cucumber;
 
-import cucumber.api.java8.En;
+import cucumber.api.java.After;
 
-public class AfterSteps implements En {
+public class AfterSteps {
+
+    private Containers containers;
 
     public AfterSteps(Containers containers) {
+        this.containers = containers;
+    }
 
-        After(containers::verifyAllClean);
-
+    @After
+    public void verifyContainersAreCleared() {
+        containers.verifyAllClean();
     }
 
 }

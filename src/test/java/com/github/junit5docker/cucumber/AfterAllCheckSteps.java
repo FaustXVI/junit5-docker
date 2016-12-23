@@ -1,17 +1,21 @@
 package com.github.junit5docker.cucumber;
 
-import cucumber.api.java8.En;
+import cucumber.api.java.en.When;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AfterAllCheckSteps implements En {
+public class AfterAllCheckSteps {
+
+    private Containers containers;
 
     public AfterAllCheckSteps(Containers containers) {
 
-        When("^the container is stopped and removed after your tests$", () -> {
-            assertThat(containers.remainings()).isEmpty();
-        });
+        this.containers = containers;
+    }
 
+    @When("^the container is stopped and removed after your tests$")
+    public void checkedAndRemoved() {
+        assertThat(containers.remainings()).isEmpty();
     }
 
 }
