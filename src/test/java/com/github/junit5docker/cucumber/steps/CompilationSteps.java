@@ -1,5 +1,6 @@
-package com.github.junit5docker.cucumber;
+package com.github.junit5docker.cucumber.steps;
 
+import com.github.junit5docker.cucumber.state.CompiledClass;
 import cucumber.api.java.en.Given;
 
 import javax.tools.JavaCompiler;

@@ -1,4 +1,4 @@
-package com.github.junit5docker.cucumber;
+package com.github.junit5docker.cucumber.state;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectContainerResponse;
@@ -40,7 +40,7 @@ public class Containers {
                 .collect(Collectors.toList());
     }
 
-    void updateStarted() {
+    public void updateStarted() {
         containersStartedByExtension = getContainers();
         containersInspect = containersStartedByExtension.stream()
                 .map(c -> dockerClient.inspectContainerCmd(c.getId()).exec())
@@ -53,11 +53,11 @@ public class Containers {
                 .collect(Collectors.toList());
     }
 
-    void updateRemainings() {
+    public void updateRemainings() {
         remainingContainers = getContainers();
     }
 
-    void verifyAllClean() {
+    public void verifyAllClean() {
         remainingContainers
                 .forEach(container -> {
                     dockerClient.stopContainerCmd(container.getId()).exec();
@@ -66,26 +66,26 @@ public class Containers {
         assertThat(remainingContainers).isEmpty();
     }
 
-    Stream<Integer[]> portMapping() {
+    public Stream<Integer[]> portMapping() {
         return containersStartedByExtension.stream()
                 .map(Container::getPorts)
                 .flatMap(Stream::of)
                 .map(port -> new Integer[]{port.getPublicPort(), port.getPrivatePort()});
     }
 
-    Stream<String> startedImageNames() {
+    public Stream<String> startedImageNames() {
         return containersStartedByExtension.stream().map(Container::getImage);
     }
 
-    Stream<String> environment() {
+    public Stream<String> environment() {
         return containersInspect.stream().map((c) -> c.getConfig().getEnv()).flatMap(Stream::of);
     }
 
-    Stream<String> logs() {
+    public Stream<String> logs() {
         return logs.stream().map(LogCallback::toString);
     }
 
-    List<Container> remainings() {
+    public List<Container> remainings() {
         return remainingContainers;
     }
 

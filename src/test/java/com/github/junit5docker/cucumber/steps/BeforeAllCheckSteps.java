@@ -1,5 +1,7 @@
-package com.github.junit5docker.cucumber;
+package com.github.junit5docker.cucumber.steps;
 
+import com.github.junit5docker.cucumber.state.CompiledClass;
+import com.github.junit5docker.cucumber.state.Containers;
 import cucumber.api.java.en.When;
 
 import static org.assertj.core.api.Assertions.assertThat;

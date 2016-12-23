@@ -1,6 +1,8 @@
-package com.github.junit5docker.cucumber;
+package com.github.junit5docker.cucumber.steps;
 
 import com.github.junit5docker.DockerExtension;
+import com.github.junit5docker.cucumber.state.CompiledClass;
+import com.github.junit5docker.cucumber.state.Containers;
 import cucumber.api.java.en.When;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 
