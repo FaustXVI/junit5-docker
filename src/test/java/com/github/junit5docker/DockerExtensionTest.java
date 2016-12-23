@@ -159,11 +159,11 @@ public class DockerExtensionTest {
                 .containsKeys("toTest")
                 .containsValues("myValue");
         }
-    }
 
-    @SuppressWarnings("unchecked")
-    private ArgumentCaptor<Map<String, String>> getMapArgumentCaptor() {
-        return ArgumentCaptor.forClass(Map.class);
+        @SuppressWarnings("unchecked")
+        private ArgumentCaptor<Map<String, String>> getMapArgumentCaptor() {
+            return ArgumentCaptor.forClass(Map.class);
+        }
     }
 
     @Nested
