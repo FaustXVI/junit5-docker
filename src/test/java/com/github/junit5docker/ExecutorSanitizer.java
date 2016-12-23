@@ -1,6 +1,5 @@
 package com.github.junit5docker;
 
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.fail;
@@ -34,15 +33,6 @@ final class ExecutorSanitizer {
         };
     }
 
-    static <T, E extends Exception> T verifyAssertionError(ThrowableSupplier<T, E> o) throws ExecutionException, E {
-        try {
-            return o.get();
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof AssertionError) throw (AssertionError) e.getCause();
-            else throw e;
-        }
-    }
-
     @FunctionalInterface
     interface InterruptibleRunnable {
 
@@ -55,9 +45,4 @@ final class ExecutorSanitizer {
         T get() throws InterruptedException;
     }
 
-    @FunctionalInterface
-    interface ThrowableSupplier<T, E extends Exception> {
-
-        T get() throws ExecutionException, E;
-    }
 }

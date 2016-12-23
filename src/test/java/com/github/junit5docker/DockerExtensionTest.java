@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
-import static com.github.junit5docker.ExecutorSanitizer.verifyAssertionError;
 import static com.github.junit5docker.WaitFor.NOTHING;
+import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static com.github.junit5docker.fakes.FakeLog.fakeLog;
 import static com.github.junit5docker.fakes.FakeLog.unfoundableLog;
 import static java.util.concurrent.CompletableFuture.runAsync;
@@ -143,7 +143,7 @@ public class DockerExtensionTest {
                 assertThat(Thread.interrupted())
                     .overridingErrorMessage("Interrupted thread should still interrupted")
                     .isTrue();
-                verifyAssertionError(voidCompletableFuture::get);
+                assertExecutionOf(voidCompletableFuture::get).hasNoAssertionFailures();
             }
 
             private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable)
@@ -154,7 +154,7 @@ public class DockerExtensionTest {
                 runnable.run();
                 long duration = System.currentTimeMillis() - callTime;
                 shutDown(executor, waitingTime, timeUnit);
-                verifyAssertionError(logSent::get);
+                assertExecutionOf(logSent::get).hasNoAssertionFailures();
                 return duration;
             }
 

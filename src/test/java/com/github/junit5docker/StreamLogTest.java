@@ -17,7 +17,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
-import static com.github.junit5docker.ExecutorSanitizer.verifyAssertionError;
+import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
@@ -87,14 +87,14 @@ public class StreamLogTest {
         streamRequested.countDown();
         Future<?> streamCompleted = executor.submit(ignoreInterrupted(completeStreamOnceStarted(streamStarted)));
         Future<?> haveLogs = executor.submit(() -> assertThat(logs).contains("added line"));
-        verifyAssertionError(streamCompleted::get);
-        verifyAssertionError(() -> {
+        assertExecutionOf(streamCompleted::get).hasNoAssertionFailures();
+        assertExecutionOf(() -> {
             try {
                 return haveLogs.get(100, MILLISECONDS);
-            } catch (TimeoutException | InterruptedException e) {
+            } catch (TimeoutException e) {
                 throw new AssertionError("unexpected exception", e);
             }
-        });
+        }).hasNoAssertionFailures();
     }
 
     private ExecutorSanitizer.InterruptibleRunnable completeStreamOnceStarted(CountDownLatch streamStarted) {
@@ -143,7 +143,7 @@ public class StreamLogTest {
         }));
         executionStarted.await();
         interruptStream();
-        verifyAssertionError(threadStillInterrupted::get);
+        assertExecutionOf(threadStillInterrupted::get).hasNoAssertionFailures();
     }
 
     private void interruptStream() throws InterruptedException {
