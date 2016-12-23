@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
+import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
 import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -51,9 +52,9 @@ public class StreamLogTest {
             streamCollected.countDown();
             return collectedLogs;
         });
-        assertThat(streamCollected.await(10, MILLISECONDS))
+        assertThat(streamCollected)
             .overridingErrorMessage("Stream should close when onComplete is called")
-            .isTrue();
+            .isDownBefore(10, MILLISECONDS);
         assertThat(logs.get()).isEmpty();
     }
 
@@ -66,9 +67,9 @@ public class StreamLogTest {
             streamCollected.countDown();
             return collectedLogs;
         });
-        assertThat(streamCollected.await(10, MILLISECONDS))
+        assertThat(streamCollected)
             .overridingErrorMessage("Stream should close when onError is called")
-            .isTrue();
+            .isDownBefore(10, MILLISECONDS);
         assertThat(logs.get()).isEmpty();
     }
 
@@ -85,9 +86,9 @@ public class StreamLogTest {
     private ExecutorSanitizer.InterruptibleRunnable completeStreamOnceStarted(CountDownLatch streamStarted) {
         return () -> {
             try {
-                assertThat(streamStarted.await(100, MILLISECONDS))
+                assertThat(streamStarted)
                     .overridingErrorMessage("Stream should have been started")
-                    .isTrue();
+                    .isDownBefore(100, MILLISECONDS);
             } finally {
                 streamLog.onComplete();
             }
@@ -111,9 +112,9 @@ public class StreamLogTest {
             executionFinished.countDown();
         }));
         streamRequested.countDown();
-        assertThat(executionFinished.await(100, MILLISECONDS))
+        assertThat(executionFinished)
             .overridingErrorMessage("Stream should not have finished")
-            .isFalse();
+            .isUpAfter(100, MILLISECONDS);
     }
 
     @Test

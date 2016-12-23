@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.WaitFor.NOTHING;
+import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
 import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static com.github.junit5docker.fakes.FakeLog.fakeLog;
 import static com.github.junit5docker.fakes.FakeLog.unfoundableLog;
@@ -134,9 +135,9 @@ public class DockerExtensionTest {
                     return unfoundableLog();
                 });
                 CompletableFuture<Void> voidCompletableFuture = runAsync(ignoreInterrupted(() -> {
-                    if (!logRequest.await(500, TimeUnit.MILLISECONDS)) {
-                        throw new AssertionError("should have ask for logs");
-                    }
+                    assertThat(logRequest)
+                        .overridingErrorMessage("should have ask for logs")
+                        .isDownBefore(500, TimeUnit.MILLISECONDS);
                     mainThread.interrupt();
                 }));
                 dockerExtension.beforeAll(context);

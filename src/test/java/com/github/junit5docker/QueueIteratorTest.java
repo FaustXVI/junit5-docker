@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
+import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -83,9 +84,9 @@ public class QueueIteratorTest {
             });
             hasNextStarted.await();
             iterator.close();
-            assertThat(hasNextReturned.await(100, MILLISECONDS))
+            assertThat(hasNextReturned)
                     .overridingErrorMessage("hasNext should have returned")
-                    .isTrue();
+                    .isDownBefore(100, MILLISECONDS);
         }
 
         @Test
