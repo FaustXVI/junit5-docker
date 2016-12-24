@@ -18,9 +18,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
-import static com.github.junit5docker.ExecutorSanitizer.verifyAssertionError;
 import static com.github.junit5docker.WaitFor.NOTHING;
+import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
+import static com.github.junit5docker.assertions.ExecutionAssertions.assertNoInterruptionThrown;
+import static com.github.junit5docker.assertions.ExecutorAssertions.assertThat;
+import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static com.github.junit5docker.fakes.FakeLog.fakeLog;
 import static com.github.junit5docker.fakes.FakeLog.unfoundableLog;
 import static java.util.concurrent.CompletableFuture.runAsync;
@@ -32,6 +34,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,11 +69,8 @@ public class DockerExtensionTest {
         @Test
         public void notWaitByDefault() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNothingTest.class);
-            when(dockerClient.logs(anyString())).thenReturn(Stream.generate(ignoreInterrupted(() -> {
-                TimeUnit.MILLISECONDS.sleep(100);
-                return null;
-            })));
             dockerExtension.beforeAll(context);
+            verify(dockerClient, never()).logs(anyString());
         }
 
         @Test
@@ -133,17 +133,17 @@ public class DockerExtensionTest {
                     logRequest.countDown();
                     return unfoundableLog();
                 });
-                CompletableFuture<Void> voidCompletableFuture = runAsync(ignoreInterrupted(() -> {
-                    if (!logRequest.await(500, TimeUnit.MILLISECONDS)) {
-                        throw new AssertionError("should have ask for logs");
-                    }
+                CompletableFuture<Void> voidCompletableFuture = runAsync(() -> {
+                    assertThat(logRequest)
+                        .overridingErrorMessage("should have ask for logs")
+                        .isDownBefore(500, TimeUnit.MILLISECONDS);
                     mainThread.interrupt();
-                }));
+                });
                 dockerExtension.beforeAll(context);
                 assertThat(Thread.interrupted())
                     .overridingErrorMessage("Interrupted thread should still interrupted")
                     .isTrue();
-                verifyAssertionError(voidCompletableFuture::get);
+                assertExecutionOf(voidCompletableFuture::get).hasNoAssertionFailures();
             }
 
             private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable)
@@ -154,23 +154,23 @@ public class DockerExtensionTest {
                 runnable.run();
                 long duration = System.currentTimeMillis() - callTime;
                 shutDown(executor, waitingTime, timeUnit);
-                verifyAssertionError(logSent::get);
+                assertExecutionOf(logSent::get).hasNoAssertionFailures();
                 return duration;
             }
 
             private void shutDown(ExecutorService executor, int waitingTime, TimeUnit timeUnit)
                 throws InterruptedException {
                 executor.shutdown();
-                assertThat(executor.awaitTermination(waitingTime * 2, timeUnit))
+                assertThat(executor)
                     .overridingErrorMessage("execution should have finished")
-                    .isTrue();
+                    .isShutedDownBefore(waitingTime * 2, timeUnit);
             }
 
             private Future<?> sendLogAfter(int waitingTime, TimeUnit timeUnit, ExecutorService executor) {
                 AtomicBoolean sendLog = new AtomicBoolean(false);
                 Stream<String> logStream = fakeLog(sendLog, WAITED_LOG);
                 when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
-                return executor.submit(ignoreInterrupted(() -> {
+                return executor.submit(assertNoInterruptionThrown(() -> {
                     timeUnit.sleep(waitingTime);
                     sendLog.set(true);
                 }));

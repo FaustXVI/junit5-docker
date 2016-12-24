@@ -13,11 +13,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
 
-import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
-import static com.github.junit5docker.ExecutorSanitizer.verifyAssertionError;
+import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
+import static com.github.junit5docker.assertions.ExecutionAssertions.assertNoInterruptionThrown;
+import static com.github.junit5docker.assertions.ExecutorAssertions.assertThat;
+import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
@@ -53,9 +53,9 @@ public class StreamLogTest {
             streamCollected.countDown();
             return collectedLogs;
         });
-        assertThat(streamCollected.await(10, MILLISECONDS))
+        assertThat(streamCollected)
             .overridingErrorMessage("Stream should close when onComplete is called")
-            .isTrue();
+            .isDownBefore(10, MILLISECONDS);
         assertThat(logs.get()).isEmpty();
     }
 
@@ -68,41 +68,28 @@ public class StreamLogTest {
             streamCollected.countDown();
             return collectedLogs;
         });
-        assertThat(streamCollected.await(10, MILLISECONDS))
+        assertThat(streamCollected)
             .overridingErrorMessage("Stream should close when onError is called")
-            .isTrue();
+            .isDownBefore(10, MILLISECONDS);
         assertThat(logs.get()).isEmpty();
     }
 
     @Test
     public void shouldGiveAStreamContainingLineOfFrameFromOtherThread()
         throws ExecutionException, InterruptedException {
-        CountDownLatch streamRequested = new CountDownLatch(1);
         CountDownLatch streamStarted = new CountDownLatch(1);
-        executor.submit(ignoreInterrupted(() -> {
-            streamRequested.await();
-            streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes()));
-        }));
-        Stream<String> logs = streamLog.stream().peek((l) -> streamStarted.countDown());
-        streamRequested.countDown();
-        Future<?> streamCompleted = executor.submit(ignoreInterrupted(completeStreamOnceStarted(streamStarted)));
-        Future<?> haveLogs = executor.submit(() -> assertThat(logs).contains("added line"));
-        verifyAssertionError(streamCompleted::get);
-        verifyAssertionError(() -> {
-            try {
-                return haveLogs.get(100, MILLISECONDS);
-            } catch (TimeoutException | InterruptedException e) {
-                throw new AssertionError("unexpected exception", e);
-            }
-        });
+        executor.submit(() -> streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes())));
+        Future<?> streamCompleted = executor.submit(completeStreamOnceStarted(streamStarted));
+        assertThat(streamLog.stream().peek((l) -> streamStarted.countDown())).contains("added line");
+        assertExecutionOf(streamCompleted::get).hasNoAssertionFailures();
     }
 
-    private ExecutorSanitizer.InterruptibleRunnable completeStreamOnceStarted(CountDownLatch streamStarted) {
+    private Runnable completeStreamOnceStarted(CountDownLatch streamStarted) {
         return () -> {
             try {
-                assertThat(streamStarted.await(100, MILLISECONDS))
+                assertThat(streamStarted)
                     .overridingErrorMessage("Stream should have been started")
-                    .isTrue();
+                    .isDownBefore(100, MILLISECONDS);
             } finally {
                 streamLog.onComplete();
             }
@@ -120,36 +107,36 @@ public class StreamLogTest {
     public void shouldNotCloseStreamIfDockerIsStillRunning() throws InterruptedException {
         CountDownLatch streamRequested = new CountDownLatch(1);
         CountDownLatch executionFinished = new CountDownLatch(1);
-        executor.submit(ignoreInterrupted(() -> {
+        executor.submit(assertNoInterruptionThrown(() -> {
             streamRequested.await();
             streamLog.stream().collect(toList());
             executionFinished.countDown();
         }));
         streamRequested.countDown();
-        assertThat(executionFinished.await(100, MILLISECONDS))
+        assertThat(executionFinished)
             .overridingErrorMessage("Stream should not have finished")
-            .isFalse();
+            .isUpAfter(100, MILLISECONDS);
     }
 
     @Test
     public void shouldInterruptStreamWhenReadingThreadInterrupted() throws InterruptedException, ExecutionException {
         CountDownLatch executionStarted = new CountDownLatch(1);
-        Future<?> threadStillInterrupted = executor.submit(ignoreInterrupted(() -> {
+        Future<?> threadStillInterrupted = executor.submit(() -> {
             executionStarted.countDown();
             streamLog.stream().collect(toList());
             assertThat(currentThread().isInterrupted())
                 .overridingErrorMessage("Thread should keep its interruption state")
                 .isTrue();
-        }));
+        });
         executionStarted.await();
         interruptStream();
-        verifyAssertionError(threadStillInterrupted::get);
+        assertExecutionOf(threadStillInterrupted::get).hasNoAssertionFailures();
     }
 
     private void interruptStream() throws InterruptedException {
         executor.shutdownNow();
-        assertThat(executor.awaitTermination(100, MILLISECONDS))
+        assertThat(executor)
             .overridingErrorMessage("Stream should have ended")
-            .isTrue();
+            .isShutedDownBefore(100, MILLISECONDS);
     }
 }
