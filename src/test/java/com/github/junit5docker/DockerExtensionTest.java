@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -28,11 +30,11 @@ import static com.github.junit5docker.fakes.FakeLog.unfoundableLog;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,6 +50,14 @@ public class DockerExtensionTest {
 
     @Nested
     class BeforeAllTestsShould {
+
+        @Captor
+        private ArgumentCaptor<Map<String, String>> mapArgumentCaptor;
+
+        @BeforeEach
+        public void initMocks() {
+            MockitoAnnotations.initMocks(this);
+        }
 
         @Test
         public void startContainerWithOnePort() {
@@ -77,7 +87,6 @@ public class DockerExtensionTest {
         public void startContainerWithEnvironmentVariables() {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OneEnvironmentTest.class);
             dockerExtension.beforeAll(context);
-            ArgumentCaptor<Map<String, String>> mapArgumentCaptor = getMapArgumentCaptor();
             verify(dockerClient).startContainer(eq("wantedImage"),
                 mapArgumentCaptor.capture(), any());
             Map<String, String> environment = mapArgumentCaptor.getValue();
@@ -85,11 +94,6 @@ public class DockerExtensionTest {
                 .hasSize(1)
                 .containsKeys("toTest")
                 .containsValues("myValue");
-        }
-
-        @SuppressWarnings("unchecked")
-        private ArgumentCaptor<Map<String, String>> getMapArgumentCaptor() {
-            return ArgumentCaptor.forClass(Map.class);
         }
 
         @Nested
