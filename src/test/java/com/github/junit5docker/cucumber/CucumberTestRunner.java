@@ -1,4 +1,4 @@
-package com.github.junit5docker;
+package com.github.junit5docker.cucumber;
 
 import cucumber.api.CucumberOptions;
 import cucumber.api.junit.Cucumber;

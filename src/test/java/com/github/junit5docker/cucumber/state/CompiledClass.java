@@ -1,4 +1,4 @@
-package com.github.junit5docker.cucumber;
+package com.github.junit5docker.cucumber.state;
 
 import com.github.junit5docker.Docker;
 import com.github.junit5docker.WaitFor;
