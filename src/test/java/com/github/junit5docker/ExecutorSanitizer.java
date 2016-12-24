@@ -1,10 +1,12 @@
 package com.github.junit5docker;
 
+import org.assertj.core.internal.Failures;
+
 import java.util.function.Supplier;
 
-import static org.assertj.core.api.Assertions.fail;
-
 final class ExecutorSanitizer {
+
+    private static final Failures FAILURES = Failures.instance();
 
     private ExecutorSanitizer() {
     }
@@ -15,8 +17,7 @@ final class ExecutorSanitizer {
                 callable.run();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                fail("Test has been interrupted");
-                throw new AssertionError("Bug in interruption ignorer");
+                throw FAILURES.failure("Test has been interrupted");
             }
         };
     }
@@ -27,8 +28,7 @@ final class ExecutorSanitizer {
                 return callable.get();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                fail("Test has been interrupted");
-                throw new AssertionError("Bug in interruption ignorer");
+                throw FAILURES.failure("Test has been interrupted");
             }
         };
     }
