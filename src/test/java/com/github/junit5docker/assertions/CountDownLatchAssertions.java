@@ -1,16 +1,14 @@
 package com.github.junit5docker.assertions;
 
 import org.assertj.core.api.AbstractAssert;
-import org.assertj.core.internal.Failures;
-import org.assertj.core.util.Strings;
+import org.assertj.core.error.BasicErrorMessageFactory;
 
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public final class CountDownLatchAssertions extends AbstractAssert<CountDownLatchAssertions, CountDownLatch> {
+import static org.junit.jupiter.api.Assertions.fail;
 
-    private static final Failures FAILURES = Failures.instance();
+public final class CountDownLatchAssertions extends AbstractAssert<CountDownLatchAssertions, CountDownLatch> {
 
     private CountDownLatchAssertions(CountDownLatch actual) {
         super(actual, CountDownLatchAssertions.class);
@@ -22,32 +20,38 @@ public final class CountDownLatchAssertions extends AbstractAssert<CountDownLatc
 
     public CountDownLatchAssertions isDownBefore(int timeout, TimeUnit timeUnit) {
         boolean await = waitFor(timeout, timeUnit);
-        if (await) return this;
-        throw Optional.ofNullable(FAILURES.failureIfErrorMessageIsOverridden(info))
-            .orElse(new AssertionError(Strings.formatIfArgs("Count down latch expected to be down after %d %s",
-                timeout, timeUnit)));
+        if (!await) throwAssertionError(new ShouldBeDownBefore(timeout, timeUnit));
+        return this;
     }
 
     public CountDownLatchAssertions isUpAfter(int timeout, TimeUnit timeUnit) {
         boolean await = waitFor(timeout, timeUnit);
-        if (await) {
-            throw Optional.ofNullable(FAILURES.failureIfErrorMessageIsOverridden(info))
-                .orElse(
-                    new AssertionError(Strings.formatIfArgs("Count down latch expected to still be up after %d %s",
-                        timeout, timeUnit)));
-        } else {
-            return this;
-        }
+        if (await) throwAssertionError(new ShouldBeUpAfter(timeout, timeUnit));
+        return this;
     }
 
     private boolean waitFor(int timeout, TimeUnit timeUnit) {
-        boolean await;
+        boolean await = false;
         try {
             await = actual.await(timeout, timeUnit);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw FAILURES.failure("Test has been interrupted");
+            fail("Test has been interrupted");
         }
         return await;
+    }
+
+    private static class ShouldBeDownBefore extends BasicErrorMessageFactory {
+
+        ShouldBeDownBefore(int timeout, TimeUnit timeUnit) {
+            super("Count down latch expected to be down after %d %s", timeout, timeUnit);
+        }
+    }
+
+    private static class ShouldBeUpAfter extends BasicErrorMessageFactory {
+
+        ShouldBeUpAfter(int timeout, TimeUnit timeUnit) {
+            super("Count down latch expected to still be up after %d %s", timeout, timeUnit);
+        }
     }
 }

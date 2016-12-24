@@ -1,10 +1,8 @@
 package com.github.junit5docker.assertions;
 
-import org.assertj.core.internal.Failures;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public final class ExecutionAssertions {
-
-    private static final Failures FAILURES = Failures.instance();
 
     private ExecutionAssertions() {
     }
@@ -15,7 +13,7 @@ public final class ExecutionAssertions {
                 callable.run();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw FAILURES.failure("Test has been interrupted");
+                fail("Test has been interrupted");
             }
         };
     }
