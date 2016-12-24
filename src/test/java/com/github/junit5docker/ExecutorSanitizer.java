@@ -5,16 +5,9 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.fail;
 
-
 final class ExecutorSanitizer {
 
     private ExecutorSanitizer() {
-    }
-
-    @FunctionalInterface
-    interface InterruptibleRunnable {
-
-        void run() throws InterruptedException;
     }
 
     static Runnable ignoreInterrupted(InterruptibleRunnable callable) {
@@ -29,12 +22,6 @@ final class ExecutorSanitizer {
         };
     }
 
-    @FunctionalInterface
-    interface InterruptibleSupplier<T> {
-
-        T get() throws InterruptedException;
-    }
-
     static <T> Supplier<T> ignoreInterrupted(InterruptibleSupplier<T> callable) {
         return () -> {
             try {
@@ -47,18 +34,30 @@ final class ExecutorSanitizer {
         };
     }
 
-    @FunctionalInterface
-    interface ThrowableSupplier<T> {
-
-        T get() throws Exception;
-    }
-
-    static <T> T verifyAssertionError(ThrowableSupplier<T> o) throws Throwable {
+    static <T, E extends Exception> T verifyAssertionError(ThrowableSupplier<T, E> o) throws ExecutionException, E {
         try {
             return o.get();
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof AssertionError) throw e.getCause();
+            if (e.getCause() instanceof AssertionError) throw (AssertionError) e.getCause();
             else throw e;
         }
+    }
+
+    @FunctionalInterface
+    interface InterruptibleRunnable {
+
+        void run() throws InterruptedException;
+    }
+
+    @FunctionalInterface
+    interface InterruptibleSupplier<T> {
+
+        T get() throws InterruptedException;
+    }
+
+    @FunctionalInterface
+    interface ThrowableSupplier<T, E extends Exception> {
+
+        T get() throws ExecutionException, E;
     }
 }

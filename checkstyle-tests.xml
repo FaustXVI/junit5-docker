@@ -31,6 +31,7 @@
         <!-- Class design -->
         <module name="FinalClass"/>
         <module name="HideUtilityClassConstructor"/>
+        <module name="InnerTypeLast"/>
         <module name="InterfaceIsType"/>
         <module name="MutableException"/>
         <module name="OneTopLevelClass"/>
@@ -52,6 +53,8 @@
             <property name="ignoreConstructorParameter" value="true"/>
             <property name="ignoreSetter" value="true"/>
         </module>
+        <module name="IllegalCatch"/>
+        <module name="IllegalThrows"/>
         <module name="IllegalToken"/>
         <module name="IllegalType"/>
         <module name="InnerAssignment"/>
@@ -70,6 +73,7 @@
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
+        <module name="VariableDeclarationUsageDistance"/>
 
         <!-- Imports -->
         <module name="AvoidStarImport"/>
