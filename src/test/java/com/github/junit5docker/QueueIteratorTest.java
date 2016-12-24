@@ -11,8 +11,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
+import static com.github.junit5docker.assertions.ExecutionAssertions.assertNoInterruptionThrown;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -92,11 +92,11 @@ public class QueueIteratorTest {
         @Test
         void shouldGiveFirstLineEvenAfterTwoCallToHasNext() {
             CountDownLatch firstLinePushed = new CountDownLatch(1);
-            executor.submit(ignoreInterrupted(() -> {
+            executor.submit(assertNoInterruptionThrown(() -> {
                 lines.put("a line");
                 firstLinePushed.countDown();
             }));
-            executor.submit(ignoreInterrupted(() -> {
+            executor.submit(assertNoInterruptionThrown(() -> {
                 firstLinePushed.await();
                 lines.put("a line 2");
             }));

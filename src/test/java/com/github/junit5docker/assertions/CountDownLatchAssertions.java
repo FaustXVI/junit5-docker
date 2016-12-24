@@ -20,22 +20,34 @@ public final class CountDownLatchAssertions extends AbstractAssert<CountDownLatc
         return new CountDownLatchAssertions(actual);
     }
 
-    public CountDownLatchAssertions isDownBefore(int timeout, TimeUnit timeUnit) throws InterruptedException {
-        boolean await = actual.await(timeout, timeUnit);
+    public CountDownLatchAssertions isDownBefore(int timeout, TimeUnit timeUnit) {
+        boolean await = waitFor(timeout, timeUnit);
         if (await) return this;
         throw Optional.ofNullable(FAILURES.failureIfErrorMessageIsOverridden(info))
             .orElse(new AssertionError(Strings.formatIfArgs("Count down latch expected to be down after %d %s",
                 timeout, timeUnit)));
     }
 
-    public CountDownLatchAssertions isUpAfter(int timeout, TimeUnit timeUnit) throws InterruptedException {
-        boolean await = actual.await(timeout, timeUnit);
+    public CountDownLatchAssertions isUpAfter(int timeout, TimeUnit timeUnit) {
+        boolean await = waitFor(timeout, timeUnit);
         if (await) {
             throw Optional.ofNullable(FAILURES.failureIfErrorMessageIsOverridden(info))
-                .orElse(new AssertionError(Strings.formatIfArgs("Count down latch expected to still be up after %d %s",
-                    timeout, timeUnit)));
+                .orElse(
+                    new AssertionError(Strings.formatIfArgs("Count down latch expected to still be up after %d %s",
+                        timeout, timeUnit)));
         } else {
             return this;
         }
+    }
+
+    private boolean waitFor(int timeout, TimeUnit timeUnit) {
+        boolean await;
+        try {
+            await = actual.await(timeout, timeUnit);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw FAILURES.failure("Test has been interrupted");
+        }
+        return await;
     }
 }

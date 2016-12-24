@@ -14,8 +14,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.github.junit5docker.ExecutorSanitizer.ignoreInterrupted;
 import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
+import static com.github.junit5docker.assertions.ExecutionAssertions.assertNoInterruptionThrown;
 import static com.github.junit5docker.assertions.ExecutorAssertions.assertThat;
 import static com.github.junit5docker.assertions.ThreadedAssertions.assertExecutionOf;
 import static java.lang.Thread.currentThread;
@@ -78,13 +78,13 @@ public class StreamLogTest {
     public void shouldGiveAStreamContainingLineOfFrameFromOtherThread()
         throws ExecutionException, InterruptedException {
         CountDownLatch streamStarted = new CountDownLatch(1);
-        executor.submit(ignoreInterrupted(() -> streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes()))));
-        Future<?> streamCompleted = executor.submit(ignoreInterrupted(completeStreamOnceStarted(streamStarted)));
+        executor.submit(() -> streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes())));
+        Future<?> streamCompleted = executor.submit(completeStreamOnceStarted(streamStarted));
         assertThat(streamLog.stream().peek((l) -> streamStarted.countDown())).contains("added line");
         assertExecutionOf(streamCompleted::get).hasNoAssertionFailures();
     }
 
-    private ExecutorSanitizer.InterruptibleRunnable completeStreamOnceStarted(CountDownLatch streamStarted) {
+    private Runnable completeStreamOnceStarted(CountDownLatch streamStarted) {
         return () -> {
             try {
                 assertThat(streamStarted)
@@ -107,7 +107,7 @@ public class StreamLogTest {
     public void shouldNotCloseStreamIfDockerIsStillRunning() throws InterruptedException {
         CountDownLatch streamRequested = new CountDownLatch(1);
         CountDownLatch executionFinished = new CountDownLatch(1);
-        executor.submit(ignoreInterrupted(() -> {
+        executor.submit(assertNoInterruptionThrown(() -> {
             streamRequested.await();
             streamLog.stream().collect(toList());
             executionFinished.countDown();
@@ -121,13 +121,13 @@ public class StreamLogTest {
     @Test
     public void shouldInterruptStreamWhenReadingThreadInterrupted() throws InterruptedException, ExecutionException {
         CountDownLatch executionStarted = new CountDownLatch(1);
-        Future<?> threadStillInterrupted = executor.submit(ignoreInterrupted(() -> {
+        Future<?> threadStillInterrupted = executor.submit(() -> {
             executionStarted.countDown();
             streamLog.stream().collect(toList());
             assertThat(currentThread().isInterrupted())
                 .overridingErrorMessage("Thread should keep its interruption state")
                 .isTrue();
-        }));
+        });
         executionStarted.await();
         interruptStream();
         assertExecutionOf(threadStillInterrupted::get).hasNoAssertionFailures();
