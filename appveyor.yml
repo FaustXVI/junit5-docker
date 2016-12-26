@@ -1,0 +1,5 @@
+build_script:
+  - mvn test
+branches:
+    only:
+        - master
