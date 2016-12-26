@@ -1,6 +1,7 @@
 # junit5-docker
 
 [![Build Status](https://travis-ci.org/FaustXVI/junit5-docker.svg?branch=master)](https://travis-ci.org/FaustXVI/junit5-docker)
+[![Build status](https://ci.appveyor.com/api/projects/status/j2bfqs6klneyohli/branch/master?svg=true)](https://ci.appveyor.com/project/FaustXVI/junit5-docker/branch/master)
 
 Start docker containers from your junit tests
 
