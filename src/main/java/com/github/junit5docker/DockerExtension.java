@@ -14,23 +14,13 @@ import java.util.function.Supplier;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
-/**
- * This is the entry point for JUnit5 extension system.
- *
- * @since 1.0
- */
-public class DockerExtension implements BeforeAllCallback, AfterAllCallback {
+class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
     private final DockerClientAdapter dockerClient;
 
     private String containerId;
 
-    /**
-     * Default constructor used by JUnit5 extension system.
-     *
-     * @since 1.0
-     */
-    public DockerExtension() {
+    DockerExtension() {
         this(new DefaultDockerClient());
     }
 
