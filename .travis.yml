@@ -1,13 +1,19 @@
-sudo: required
-services:
-    - docker
 language: java
-jdk:
-    - oraclejdk8
-script: mvn verify
+matrix:
+    include:
+        - os: linux
+          jdk: oraclejdk8
+          services:
+              - docker
+          env: goal=verify
+        - os: osx
+          osx_image: xcode8.2
+          env: goal=test
+script:
+    - mvn $goal
 after_success:
-    - .travis/publish-documentation.sh
-    - .travis/deploy-snapshot
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .travis/publish-documentation.sh; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .travis/deploy-snapshot; fi
 branches:
     only:
         - master
