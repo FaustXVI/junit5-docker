@@ -17,6 +17,10 @@ public class CompiledClass {
         this.compiledClass = clazz;
     }
 
+    public Class<?> getCompiledClass() {
+        return compiledClass;
+    }
+
     public String[] environmentAnnotations() {
         return Stream.of(compiledClass.getAnnotation(Docker.class).environments())
             .map(e -> e.key() + "=" + e.value())

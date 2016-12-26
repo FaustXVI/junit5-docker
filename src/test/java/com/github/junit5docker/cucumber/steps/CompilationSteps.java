@@ -40,7 +40,7 @@ public class CompilationSteps {
         }
 
         URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{source.getParent().toUri().toURL()},
-                Thread.currentThread().getContextClassLoader());
+            Thread.currentThread().getContextClassLoader());
         return Class.forName("MyAwesomeTest", true, classLoader);
     }
 

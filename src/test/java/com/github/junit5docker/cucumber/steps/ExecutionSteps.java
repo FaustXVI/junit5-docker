@@ -1,30 +1,29 @@
 package com.github.junit5docker.cucumber.steps;
 
-import com.github.junit5docker.DockerExtension;
+import com.github.junit5docker.cucumber.engine.JupiterExecutionListener;
+import com.github.junit5docker.cucumber.engine.JupiterTestEngineForTests;
 import com.github.junit5docker.cucumber.state.CompiledClass;
-import com.github.junit5docker.cucumber.state.Containers;
 import cucumber.api.java.en.When;
-import org.junit.jupiter.api.extension.ContainerExtensionContext;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExecutionSteps {
 
-    private final Containers containers;
-
     private final CompiledClass compiledClass;
 
-    public ExecutionSteps(Containers containers, CompiledClass compiledClass) {
-        this.containers = containers;
+    private final JupiterTestEngineForTests testEngine;
+
+    public ExecutionSteps(CompiledClass compiledClass, JupiterTestEngineForTests testEngine) {
         this.compiledClass = compiledClass;
+        this.testEngine = testEngine;
     }
 
     @When("^you run your test :$")
-    public void executeTest() {
-        DockerExtension dockerExtension = new DockerExtension();
-        ContainerExtensionContext context = compiledClass.getExtensionContext();
-        dockerExtension.beforeAll(context);
-        containers.updateStarted();
-        dockerExtension.afterAll(context);
-        containers.updateRemainings();
+    public void executeTest() throws Exception {
+        JupiterExecutionListener listener = testEngine.executeTestsForClass(compiledClass.getCompiledClass());
+        assertThat(listener.allTestsPassed())
+            .overridingErrorMessage("Tests should be green")
+            .isTrue();
     }
 
 }
