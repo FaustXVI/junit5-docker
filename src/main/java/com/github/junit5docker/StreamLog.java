@@ -3,6 +3,7 @@ package com.github.junit5docker;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.core.command.LogContainerResultCallback;
 
+import java.nio.charset.Charset;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Stream;
@@ -13,6 +14,8 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 
 class StreamLog extends LogContainerResultCallback {
 
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
+
     private BlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
 
     private QueueIterator queueIterator = new QueueIterator(lines);
@@ -20,7 +23,7 @@ class StreamLog extends LogContainerResultCallback {
     @Override
     public void onNext(Frame item) {
         try {
-            lines.put(new String(item.getPayload()));
+            lines.put(new String(item.getPayload(), UTF_8));
         } catch (InterruptedException e) {
             currentThread().interrupt();
         }

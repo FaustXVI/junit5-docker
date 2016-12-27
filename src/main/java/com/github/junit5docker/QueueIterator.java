@@ -1,6 +1,7 @@
 package com.github.junit5docker;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +38,7 @@ class QueueIterator implements Iterator<String>, AutoCloseable {
 
     @Override
     public String next() {
+        if (lineRead == null) throw new NoSuchElementException("Line read is null");
         String result = lineRead;
         lineRead = null;
         return result;
