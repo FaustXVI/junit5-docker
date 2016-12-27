@@ -28,7 +28,7 @@ public class StreamLogTest {
 
     private static final Charset UTF_8 = Charset.forName("UTF8");
 
-    public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
+    private static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
 
     private StreamLog streamLog;
 
@@ -90,8 +90,7 @@ public class StreamLogTest {
     }
 
     @Test
-    public void shouldReadLineAsUTF8()
-        throws ExecutionException, InterruptedException {
+    public void shouldReadLineAsUtf8() throws ExecutionException, InterruptedException {
         CountDownLatch streamFinished = new CountDownLatch(2);
         String originalString = "use of accents é";
         byte[] utf8String = originalString.getBytes(UTF_8);

@@ -84,6 +84,10 @@
                         <version>${junit.vintage.version}</version>
                     </dependency>
                 </dependencies>
+                <configuration>
+                    <!-- Needed to make some encoding dependant tests to fail -->
+                    <argLine>-Dfile.encoding=ISO-8859-1</argLine>
+                </configuration>
                 <executions>
                     <execution>
                         <id>integration-tests</id>
