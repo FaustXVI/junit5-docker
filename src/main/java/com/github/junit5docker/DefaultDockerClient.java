@@ -64,7 +64,7 @@ class DefaultDockerClient implements DockerClientAdapter {
         return environment.entrySet().stream().map(this::toEnvString).collect(toList());
     }
 
-    private Ports createPortBindings(PortBinding[] portBinding) {
+    private Ports createPortBindings(PortBinding... portBinding) {
         Ports bindings = new Ports();
         for (PortBinding binding : portBinding) {
             ExposedPort inner = tcp(binding.inner);

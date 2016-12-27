@@ -16,9 +16,9 @@ class StreamLog extends LogContainerResultCallback {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-    private BlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<String> lines = new ArrayBlockingQueue<>(1);
 
-    private QueueIterator queueIterator = new QueueIterator(lines);
+    private final QueueIterator queueIterator = new QueueIterator(lines);
 
     @Override
     public void onNext(Frame item) {
