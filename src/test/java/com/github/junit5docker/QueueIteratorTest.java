@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -15,6 +16,7 @@ import static com.github.junit5docker.assertions.CountDownLatchAssertions.assert
 import static com.github.junit5docker.assertions.ExecutionAssertions.assertNoInterruptionThrown;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 public class QueueIteratorTest {
 
@@ -52,6 +54,14 @@ public class QueueIteratorTest {
     }
 
     @Test
+    public void shouldThrowAnExceptionIfNoElement() throws InterruptedException {
+        lines.put("a line");
+        iterator.hasNext();
+        iterator.next();
+        assertThatExceptionOfType(NoSuchElementException.class).isThrownBy(() -> iterator.next());
+    }
+
+    @Test
     public void shouldInterruptIfThreadIsInterrupted() {
         Thread.currentThread().interrupt();
         assertThat(iterator.hasNext()).isFalse();
@@ -85,8 +95,8 @@ public class QueueIteratorTest {
             hasNextStarted.await();
             iterator.close();
             assertThat(hasNextReturned)
-                    .overridingErrorMessage("hasNext should have returned")
-                    .isDownBefore(100, MILLISECONDS);
+                .overridingErrorMessage("hasNext should have returned")
+                .isDownBefore(100, MILLISECONDS);
         }
 
         @Test

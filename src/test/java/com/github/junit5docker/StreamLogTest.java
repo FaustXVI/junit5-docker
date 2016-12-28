@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -24,6 +25,10 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class StreamLogTest {
+
+    private static final Charset UTF_8 = Charset.forName("UTF8");
+
+    private static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
 
     private StreamLog streamLog;
 
@@ -78,28 +83,32 @@ public class StreamLogTest {
     public void shouldGiveAStreamContainingLineOfFrameFromOtherThread()
         throws ExecutionException, InterruptedException {
         CountDownLatch streamStarted = new CountDownLatch(1);
-        executor.submit(() -> streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes())));
+        executor.submit(() -> streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes(UTF_8))));
         Future<?> streamCompleted = executor.submit(completeStreamOnceStarted(streamStarted));
         assertThat(streamLog.stream().peek((l) -> streamStarted.countDown())).contains("added line");
         assertExecutionOf(streamCompleted::get).hasNoAssertionFailures();
     }
 
-    private Runnable completeStreamOnceStarted(CountDownLatch streamStarted) {
-        return () -> {
-            try {
-                assertThat(streamStarted)
-                    .overridingErrorMessage("Stream should have been started")
-                    .isDownBefore(100, MILLISECONDS);
-            } finally {
-                streamLog.onComplete();
-            }
-        };
+    @Test
+    public void shouldReadLineAsUtf8() throws ExecutionException, InterruptedException {
+        CountDownLatch streamFinished = new CountDownLatch(2);
+        String originalString = "use of accents é";
+        byte[] utf8String = originalString.getBytes(UTF_8);
+        byte[] isoString = originalString.getBytes(ISO_8859_1);
+        String misinterpretedString = new String(isoString, UTF_8);
+        executor.submit(() -> streamLog.onNext(new Frame(StreamType.RAW, utf8String)));
+        executor.submit(() -> streamLog.onNext(new Frame(StreamType.RAW, isoString)));
+        Future<?> streamCompleted = executor.submit(completeStreamOnceStarted(streamFinished));
+        assertThat(streamLog.stream().peek((l) -> streamFinished.countDown()))
+            .hasSize(2)
+            .containsOnlyOnce(originalString, misinterpretedString);
+        assertExecutionOf(streamCompleted::get).hasNoAssertionFailures();
     }
 
     @Test
     public void shouldInterruptStreamWhenDockerThreadInterrupted() {
         Thread.currentThread().interrupt();
-        streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes()));
+        streamLog.onNext(new Frame(StreamType.RAW, "added line".getBytes(UTF_8)));
         assertThat(Thread.interrupted()).isTrue();
     }
 
@@ -131,6 +140,18 @@ public class StreamLogTest {
         executionStarted.await();
         interruptStream();
         assertExecutionOf(threadStillInterrupted::get).hasNoAssertionFailures();
+    }
+
+    private Runnable completeStreamOnceStarted(CountDownLatch streamStarted) {
+        return () -> {
+            try {
+                assertThat(streamStarted)
+                    .overridingErrorMessage("Stream should have been started")
+                    .isDownBefore(100, MILLISECONDS);
+            } finally {
+                streamLog.onComplete();
+            }
+        };
     }
 
     private void interruptStream() throws InterruptedException {

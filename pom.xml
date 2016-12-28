@@ -51,6 +51,10 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.19</version>
+                <configuration>
+                    <!-- Needed to make some encoding dependant tests to fail -->
+                    <argLine>-Dfile.encoding=ISO-8859-1</argLine>
+                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.junit.platform</groupId>
@@ -80,6 +84,10 @@
                         <version>${junit.vintage.version}</version>
                     </dependency>
                 </dependencies>
+                <configuration>
+                    <!-- Needed to make some encoding dependant tests to fail -->
+                    <argLine>-Dfile.encoding=ISO-8859-1</argLine>
+                </configuration>
                 <executions>
                     <execution>
                         <id>integration-tests</id>
@@ -289,7 +297,24 @@
                             <includeTestSourceDirectory>true</includeTestSourceDirectory>
                         </configuration>
                     </execution>
-
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>3.0.4</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Low</threshold>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>findbug-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
