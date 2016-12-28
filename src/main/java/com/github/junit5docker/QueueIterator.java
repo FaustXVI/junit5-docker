@@ -2,11 +2,14 @@ package com.github.junit5docker;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.Thread.currentThread;
+import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 
 class QueueIterator implements Iterator<String>, AutoCloseable {
 
@@ -16,7 +19,7 @@ class QueueIterator implements Iterator<String>, AutoCloseable {
 
     private final BlockingQueue<String> lines;
 
-    private String lineRead;
+    private Optional<String> lineRead = empty();
 
     QueueIterator(BlockingQueue<String> lines) {
         this.opened = new AtomicBoolean(true);
@@ -25,22 +28,22 @@ class QueueIterator implements Iterator<String>, AutoCloseable {
 
     @Override
     public boolean hasNext() {
-        while (opened.get() && lineRead == null) {
+        while (opened.get() && !lineRead.isPresent()) {
             try {
-                lineRead = lines.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
+                lineRead = ofNullable(lines.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS));
             } catch (InterruptedException e) {
                 opened.set(false);
                 currentThread().interrupt();
             }
         }
-        return lineRead != null;
+        return lineRead.isPresent();
     }
 
     @Override
     public String next() {
-        if (lineRead == null) throw new NoSuchElementException("Line read is null");
-        String result = lineRead;
-        lineRead = null;
+        if (!lineRead.isPresent()) throw new NoSuchElementException("Line read is null");
+        String result = lineRead.get();
+        lineRead = empty();
         return result;
     }
 

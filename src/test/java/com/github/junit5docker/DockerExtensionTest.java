@@ -153,13 +153,13 @@ public class DockerExtensionTest {
             private long sendLogAndTimeExecution(int waitingTime, TimeUnit timeUnit, Runnable runnable)
                 throws InterruptedException, ExecutionException {
                 ExecutorService executor = Executors.newSingleThreadExecutor();
-                long callTime = System.currentTimeMillis();
+                long callTime = System.nanoTime();
                 Future<?> logSent = sendLogAfter(waitingTime, timeUnit, executor);
                 runnable.run();
-                long duration = System.currentTimeMillis() - callTime;
+                long duration = System.nanoTime() - callTime;
                 shutDown(executor, waitingTime, timeUnit);
                 assertExecutionOf(logSent::get).hasNoAssertionFailures();
-                return duration;
+                return TimeUnit.NANOSECONDS.toMillis(duration);
             }
 
             private void shutDown(ExecutorService executor, int waitingTime, TimeUnit timeUnit)

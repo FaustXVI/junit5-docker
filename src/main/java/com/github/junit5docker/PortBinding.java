@@ -14,10 +14,10 @@ final class PortBinding {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PortBinding that = (PortBinding) o;
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        PortBinding that = (PortBinding) other;
         return exposed == that.exposed
                 && inner == that.inner;
     }
