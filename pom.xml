@@ -52,7 +52,7 @@
                 <version>2.19</version>
                 <configuration>
                     <!-- Needed to make some encoding dependant tests to fail -->
-                    <argLine>-Dfile.encoding=ISO-8859-1</argLine>
+                    <argLine>${argLine} -Dfile.encoding=ISO-8859-1</argLine>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -85,7 +85,7 @@
                 </dependencies>
                 <configuration>
                     <!-- Needed to make some encoding dependant tests to fail -->
-                    <argLine>-Dfile.encoding=ISO-8859-1</argLine>
+                    <argLine>${argLine} -Dfile.encoding=ISO-8859-1</argLine>
                 </configuration>
                 <executions>
                     <execution>
