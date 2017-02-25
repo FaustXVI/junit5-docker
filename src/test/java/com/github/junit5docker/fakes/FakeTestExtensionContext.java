@@ -1,7 +1,7 @@
 package com.github.junit5docker.fakes;
 
-import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestExtensionContext;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -9,11 +9,22 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class FakeContainerExtensionContext implements ContainerExtensionContext {
+public class FakeTestExtensionContext implements TestExtensionContext {
+
     private final Class<?> testSampleClass;
 
-    public FakeContainerExtensionContext(Class<?> testSampleClass) {
+    public FakeTestExtensionContext(Class<?> testSampleClass) {
         this.testSampleClass = testSampleClass;
+    }
+
+    @Override
+    public Object getTestInstance() {
+        return null;
+    }
+
+    @Override
+    public Optional<Throwable> getTestException() {
+        return null;
     }
 
     @Override
@@ -53,6 +64,7 @@ public class FakeContainerExtensionContext implements ContainerExtensionContext 
 
     @Override
     public void publishReportEntry(Map<String, String> map) {
+
     }
 
     @Override

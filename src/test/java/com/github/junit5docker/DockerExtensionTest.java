@@ -1,10 +1,12 @@
 package com.github.junit5docker;
 
 import com.github.junit5docker.fakes.FakeContainerExtensionContext;
+import com.github.junit5docker.fakes.FakeTestExtensionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
+import org.junit.jupiter.api.extension.TestExtensionContext;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
@@ -49,6 +51,25 @@ public class DockerExtensionTest {
     private DockerExtension dockerExtension = new DockerExtension(dockerClient);
 
     @Nested
+    class BeforeEachTestsShould {
+
+        @Test
+        public void startContainerWithOnePort() {
+            TestExtensionContext context = new FakeTestExtensionContext(RecreateContainerTest.class);
+            dockerExtension.beforeEach(context);
+            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
+                eq(new PortBinding(8801, 8800)));
+        }
+
+        @Test
+        public void notStartContainerIfMarkedAsReused() {
+            TestExtensionContext context = new FakeTestExtensionContext(OnePortTest.class);
+            dockerExtension.beforeEach(context);
+            verify(dockerClient, never()).startContainer(any(), anyMap(), any());
+        }
+    }
+
+    @Nested
     class BeforeAllTestsShould {
 
         @Captor
@@ -65,6 +86,13 @@ public class DockerExtensionTest {
             dockerExtension.beforeAll(context);
             verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
                 eq(new PortBinding(8801, 8800)));
+        }
+
+        @Test
+        public void notStartContainerIfMarkedAsRecreated() {
+            ContainerExtensionContext context = new FakeContainerExtensionContext(RecreateContainerTest.class);
+            dockerExtension.beforeAll(context);
+            verify(dockerClient, never()).startContainer(any(), anyMap(), any());
         }
 
         @Test
@@ -184,6 +212,35 @@ public class DockerExtensionTest {
     }
 
     @Nested
+    class AfterEachTestsShould {
+
+        private static final String CONTAINER_ID = "CONTAINER_ID";
+
+        @BeforeEach
+        public void callBefore() {
+            when(dockerClient.startContainer(anyString(), anyMap(),
+                any()))
+                .thenReturn(CONTAINER_ID);
+            dockerExtension.beforeEach(new FakeTestExtensionContext(RecreateContainerTest.class));
+        }
+
+        @Test
+        public void stopContainer() {
+            TestExtensionContext context = new FakeTestExtensionContext(RecreateContainerTest.class);
+            dockerExtension.afterEach(context);
+            verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
+        }
+
+        @Test
+        public void notStopContainerNotMarkedAsRenewable() {
+            TestExtensionContext context = new FakeTestExtensionContext(OnePortTest.class);
+            dockerExtension.afterEach(context);
+            verify(dockerClient, never()).stopAndRemoveContainer(any());
+        }
+
+    }
+
+    @Nested
     class AfterAllTestsShould {
 
         private static final String CONTAINER_ID = "CONTAINER_ID";
@@ -201,6 +258,13 @@ public class DockerExtensionTest {
             ContainerExtensionContext context = new FakeContainerExtensionContext(OnePortTest.class);
             dockerExtension.afterAll(context);
             verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
+        }
+
+        @Test
+        public void notStopContainerMarkedAsRenewable() {
+            ContainerExtensionContext context = new FakeContainerExtensionContext(RecreateContainerTest.class);
+            dockerExtension.afterAll(context);
+            verify(dockerClient, never()).stopAndRemoveContainer(any());
         }
     }
 
@@ -246,6 +310,12 @@ public class DockerExtensionTest {
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
         waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 2000))
     private static class InterruptionTest {
+
+    }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
+        newForEachCase = true)
+    private static class RecreateContainerTest {
 
     }
 }

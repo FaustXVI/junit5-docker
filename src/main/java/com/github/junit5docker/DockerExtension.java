@@ -1,8 +1,12 @@
 package com.github.junit5docker;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ContainerExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +18,7 @@ import java.util.function.Supplier;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
-class DockerExtension implements BeforeAllCallback, AfterAllCallback {
+class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback {
 
     private final DockerClientAdapter dockerClient;
 
@@ -31,6 +35,16 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback {
     @Override
     public void beforeAll(ContainerExtensionContext containerExtensionContext) {
         Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
+        if (!dockerAnnotation.newForEachCase()) startContainer(dockerAnnotation);
+    }
+
+    @Override
+    public void beforeEach(TestExtensionContext context) {
+        Docker dockerAnnotation = findDockerAnnotation(context);
+        if (dockerAnnotation.newForEachCase()) startContainer(dockerAnnotation);
+    }
+
+    private void startContainer(Docker dockerAnnotation) {
         PortBinding[] portBindings = createPortBindings(dockerAnnotation);
         Map<String, String> environmentMap = createEnvironmentMap(dockerAnnotation);
         String imageReference = findImageName(dockerAnnotation);
@@ -63,8 +77,8 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback {
         return () -> dockerClient.logs(containerId).anyMatch(log -> log.contains(logToFind));
     }
 
-    private Docker findDockerAnnotation(ContainerExtensionContext containerExtensionContext) {
-        Class<?> testClass = containerExtensionContext.getTestClass().get();
+    private Docker findDockerAnnotation(ExtensionContext extensionContext) {
+        Class<?> testClass = extensionContext.getTestClass().get();
         return testClass.getAnnotation(Docker.class);
     }
 
@@ -93,6 +107,13 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback {
 
     @Override
     public void afterAll(ContainerExtensionContext containerExtensionContext) {
-        dockerClient.stopAndRemoveContainer(containerId);
+        Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
+        if (!dockerAnnotation.newForEachCase()) dockerClient.stopAndRemoveContainer(containerId);
+    }
+
+    @Override
+    public void afterEach(TestExtensionContext context) {
+        Docker dockerAnnotation = findDockerAnnotation(context);
+        if (dockerAnnotation.newForEachCase()) dockerClient.stopAndRemoveContainer(containerId);
     }
 }

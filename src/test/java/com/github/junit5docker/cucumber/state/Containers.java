@@ -17,14 +17,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class Containers {
 
     private final DockerClient dockerClient = DockerClientBuilder
-            .getInstance(createDefaultConfigBuilder().withApiVersion("1.22"))
-            .build();
+        .getInstance(createDefaultConfigBuilder().withApiVersion("1.22"))
+        .build();
 
     private List<Container> existingContainers;
 
     private List<Container> containersStartedByExtension;
 
     private List<Container> remainingContainers;
+
+    private List<Container> containersStartedByExtensionPerTest;
+
+    private List<Container> remainingContainersPerTest;
 
     private List<InspectContainerResponse> containersInspect;
 
@@ -36,45 +40,60 @@ public class Containers {
 
     private List<Container> getContainers() {
         return dockerClient.listContainersCmd().exec().stream()
-                .filter(container -> !existingContainers.contains(container))
-                .collect(Collectors.toList());
+            .filter(container -> !existingContainers.contains(container))
+            .collect(Collectors.toList());
     }
 
     public void updateStarted() {
+        System.out.println("Containers.updateStarted");
         containersStartedByExtension = getContainers();
         containersInspect = containersStartedByExtension.stream()
-                .map(c -> dockerClient.inspectContainerCmd(c.getId()).exec())
-                .collect(Collectors.toList());
+            .map(c -> dockerClient.inspectContainerCmd(c.getId()).exec())
+            .collect(Collectors.toList());
         logs = containersStartedByExtension.stream()
-                .map(c -> dockerClient.logContainerCmd(c.getId())
-                        .withStdOut(true)
-                        .withStdErr(true)
-                        .exec(new LogCallback()))
-                .collect(Collectors.toList());
+            .map(c -> dockerClient.logContainerCmd(c.getId())
+                .withStdOut(true)
+                .withStdErr(true)
+                .exec(new LogCallback()))
+            .collect(Collectors.toList());
+    }
+
+    public void updateStartedForTest() {
+        containersStartedByExtensionPerTest = getContainers().stream()
+            .filter(c -> !containersStartedByExtension.contains(c))
+            .collect(Collectors.toList());
     }
 
     public void updateRemainings() {
         remainingContainers = getContainers();
     }
 
+    public void updateRemainingsForTest() {
+        remainingContainersPerTest = getContainers();
+    }
+
     public void verifyAllClean() {
         remainingContainers
-                .forEach(container -> {
-                    dockerClient.stopContainerCmd(container.getId()).exec();
-                    dockerClient.removeContainerCmd(container.getId()).exec();
-                });
+            .forEach(container -> {
+                dockerClient.stopContainerCmd(container.getId()).exec();
+                dockerClient.removeContainerCmd(container.getId()).exec();
+            });
         assertThat(remainingContainers).isEmpty();
     }
 
     public Stream<Integer[]> portMapping() {
         return containersStartedByExtension.stream()
-                .map(Container::getPorts)
-                .flatMap(Stream::of)
-                .map(port -> new Integer[]{port.getPublicPort(), port.getPrivatePort()});
+            .map(Container::getPorts)
+            .flatMap(Stream::of)
+            .map(port -> new Integer[]{port.getPublicPort(), port.getPrivatePort()});
     }
 
     public Stream<String> startedImageNames() {
         return containersStartedByExtension.stream().map(Container::getImage);
+    }
+
+    public Stream<String> startedImageNamesPerTest() {
+        return containersStartedByExtensionPerTest.stream().map(Container::getImage);
     }
 
     public Stream<String> environment() {
@@ -87,6 +106,10 @@ public class Containers {
 
     public List<Container> remainings() {
         return remainingContainers;
+    }
+
+    public Stream<Container> startedContainersPerTest() {
+        return containersStartedByExtensionPerTest.stream();
     }
 
     private static class LogCallback extends LogContainerResultCallback {

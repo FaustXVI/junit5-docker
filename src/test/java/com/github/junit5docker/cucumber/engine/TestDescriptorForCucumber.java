@@ -1,6 +1,8 @@
 package com.github.junit5docker.cucumber.engine;
 
 import com.github.junit5docker.cucumber.state.Containers;
+import org.junit.jupiter.engine.descriptor.ClassTestDescriptor;
+import org.junit.jupiter.engine.descriptor.MethodTestDescriptor;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.support.hierarchical.Node;
 
@@ -31,21 +33,28 @@ final class TestDescriptorForCucumber implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        try {
-            Method[] declaredMethods = TestDescriptorForCucumber.class.getDeclaredMethods();
-            Optional<Method> foundedMethod =
-                Stream.of(declaredMethods)
-                    .filter(m -> method.getName().equals(m.getName()))
-                    .findFirst();
-            if (foundedMethod.isPresent()) {
-                return foundedMethod.get().invoke(this, args);
-            } else {
-                return method.invoke(testDescriptor, args);
-            }
-        } finally {
-            if ("before".equals(method.getName())) containers.updateStarted();
-            if ("after".equals(method.getName())) containers.updateRemainings();
+        Method[] declaredMethods = TestDescriptorForCucumber.class.getDeclaredMethods();
+        Optional<Method> foundedMethod =
+            Stream.of(declaredMethods)
+                .filter(m -> method.getName().equals(m.getName()))
+                .findFirst();
+        if (foundedMethod.isPresent()) {
+            return foundedMethod.get().invoke(this, args);
         }
+        return method.invoke(wrapDescriptorForCucumber(), args);
+    }
+
+    private TestDescriptor wrapDescriptorForCucumber() {
+        TestDescriptor usedDescriptor = this.testDescriptor;
+        if (testDescriptor instanceof MethodTestDescriptor) {
+            usedDescriptor =
+                new MethodTestDescriptorForCucumber((MethodTestDescriptor) testDescriptor, containers);
+        }
+        if (testDescriptor instanceof ClassTestDescriptor) {
+            usedDescriptor =
+                new ClassTestDescriptorForCucumber((ClassTestDescriptor) testDescriptor, containers);
+        }
+        return usedDescriptor;
     }
 
     static TestDescriptor createTestDescriptorForCucumber(TestDescriptor testDescriptor, Containers containers) {
