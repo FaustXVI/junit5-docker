@@ -150,6 +150,10 @@ public @interface <span class="memberNameLabel">Docker</span></pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../com/github/junit5docker/Docker.html#environments--">environments</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../com/github/junit5docker/Docker.html#newForEachCase--">newForEachCase</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../com/github/junit5docker/WaitFor.html" title="annotation in com.github.junit5docker">WaitFor</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../com/github/junit5docker/Docker.html#waitFor--">waitFor</a></span></code>&nbsp;</td>
 </tr>
@@ -229,7 +233,7 @@ public @interface <span class="memberNameLabel">Docker</span></pre>
 <li class="blockList"><a name="waitFor--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>waitFor</h4>
 <pre>public abstract&nbsp;<a href="../../../com/github/junit5docker/WaitFor.html" title="annotation in com.github.junit5docker">WaitFor</a>&nbsp;waitFor</pre>
@@ -242,6 +246,27 @@ public @interface <span class="memberNameLabel">Docker</span></pre>
 <dl>
 <dt>Default:</dt>
 <dd>@com.github.junit5docker.WaitFor("")</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="newForEachCase--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>newForEachCase</h4>
+<pre>public abstract&nbsp;boolean&nbsp;newForEachCase</pre>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if the container should be recreated for each test case.
+ False if it should be created only once for the test class.</dd>
+</dl>
+<dl>
+<dt>Default:</dt>
+<dd>false</dd>
 </dl>
 </li>
 </ul>
