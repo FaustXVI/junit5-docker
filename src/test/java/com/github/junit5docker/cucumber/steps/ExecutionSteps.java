@@ -18,7 +18,7 @@ public class ExecutionSteps {
         this.testEngine = testEngine;
     }
 
-    @When("^you run your test :$")
+    @When("^you run your tests? :$")
     public void executeTest() throws Exception {
         JupiterExecutionListener listener = testEngine.executeTestsForClass(compiledClass.getCompiledClass());
         assertThat(listener.allTestsPassed())

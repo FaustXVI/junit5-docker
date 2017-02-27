@@ -97,4 +97,29 @@ public class MyAwesomeTest {
 
  * the container is started with the given environment variables
  * the tests are started only after the string `mysqld: ready for connections` is found in the container's logs
- 
+
+  Scenario: Stop and restart containers before each tests
+
+    Given that you have a test like :
+
+"""
+@Docker(image = "faustxvi/simple-two-ports", ports = @Port(exposed = 8801, inner = 8080), newForEachCase = true)
+public class MyAwesomeTest {
+
+    @Test
+    void checkMyCode() {
+        // Add your test content here
+    }
+
+    @Test
+    void checkMyCodeWithAnotherContainer() {
+        // Add your test content here
+    }
+
+}
+"""
+
+    When you run your tests :
+
+    * a new container `faustxvi/simple-two-ports` is started before running each tests using the version `latest`
+    * this container is stopped and removed after usage
