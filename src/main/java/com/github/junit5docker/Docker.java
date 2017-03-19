@@ -50,5 +50,5 @@ public @interface Docker {
      * @return true if the container should be recreated for each test case.
      * False if it should be created only once for the test class.
      */
-    boolean newForEachCase() default false;
+    boolean newForEachCase() default true;
 }

@@ -16,7 +16,7 @@ public class AfterAllCheckSteps {
 
     @When("^the container is stopped and removed after your tests$")
     public void checkedAndRemoved() {
-        assertThat(containers.remainings()).isEmpty();
+        assertThat(containers.remaining()).isEmpty();
     }
 
 }
