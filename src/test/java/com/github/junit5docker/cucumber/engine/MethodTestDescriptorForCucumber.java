@@ -19,6 +19,14 @@ class MethodTestDescriptorForCucumber extends MethodTestDescriptor {
     protected void invokeTestMethod(JupiterEngineExecutionContext context) {
         containers.updateStartedForTest();
         super.invokeTestMethod(context);
-        containers.updateRemainingsForTest();
+    }
+
+    @Override
+    public JupiterEngineExecutionContext execute(JupiterEngineExecutionContext context) throws Exception {
+        try {
+            return super.execute(context);
+        } finally {
+            containers.updateRemainingsForTest();
+        }
     }
 }

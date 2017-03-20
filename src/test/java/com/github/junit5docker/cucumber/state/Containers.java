@@ -32,7 +32,11 @@ public class Containers {
 
     private List<InspectContainerResponse> containersInspect;
 
+    private List<InspectContainerResponse> containersInspectPerTest;
+
     private List<LogCallback> logs;
+
+    private List<LogCallback> logsPerTest;
 
     public Containers() {
         existingContainers = dockerClient.listContainersCmd().exec();
@@ -62,6 +66,15 @@ public class Containers {
         containersStartedByExtensionPerTest = getContainers().stream()
             .filter(c -> !containersStartedByExtension.contains(c))
             .collect(Collectors.toList());
+        containersInspectPerTest = containersStartedByExtensionPerTest.stream()
+            .map(c -> dockerClient.inspectContainerCmd(c.getId()).exec())
+            .collect(Collectors.toList());
+        logsPerTest = containersStartedByExtensionPerTest.stream()
+            .map(c -> dockerClient.logContainerCmd(c.getId())
+                .withStdOut(true)
+                .withStdErr(true)
+                .exec(new LogCallback()))
+            .collect(Collectors.toList());
     }
 
     public void updateRemainings() {
@@ -82,7 +95,7 @@ public class Containers {
     }
 
     public Stream<Integer[]> portMapping() {
-        return containersStartedByExtension.stream()
+        return Stream.concat(containersStartedByExtension.stream(), containersStartedByExtensionPerTest.stream())
             .map(Container::getPorts)
             .flatMap(Stream::of)
             .map(port -> new Integer[]{port.getPublicPort(), port.getPrivatePort()});
@@ -97,19 +110,24 @@ public class Containers {
     }
 
     public Stream<String> environment() {
-        return containersInspect.stream().map((c) -> c.getConfig().getEnv()).flatMap(Stream::of);
+        return Stream.concat(containersInspect.stream(), containersInspectPerTest.stream())
+            .map((c) -> c.getConfig().getEnv()).flatMap(Stream::of);
     }
 
     public Stream<String> logs() {
-        return logs.stream().map(LogCallback::toString);
+        return Stream.concat(logs.stream(), logsPerTest.stream()).map(LogCallback::toString);
     }
 
-    public List<Container> remainings() {
-        return remainingContainers;
+    public List<Container> remaining() {
+        return this.remainingContainers;
     }
 
     public Stream<Container> startedContainersPerTest() {
         return containersStartedByExtensionPerTest.stream();
+    }
+
+    public List<Container> remainingForTest() {
+        return this.remainingContainersPerTest;
     }
 
     private static class LogCallback extends LogContainerResultCallback {

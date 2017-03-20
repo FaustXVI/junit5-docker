@@ -54,8 +54,8 @@ public class DockerExtensionTest {
     class BeforeEachTestsShould {
 
         @Test
-        public void startContainerWithOnePort() {
-            TestExtensionContext context = new FakeTestExtensionContext(RecreateContainerTest.class);
+        public void startContainerNotMarked() {
+            TestExtensionContext context = new FakeTestExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.beforeEach(context);
             verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
                 eq(new PortBinding(8801, 8800)));
@@ -63,7 +63,7 @@ public class DockerExtensionTest {
 
         @Test
         public void notStartContainerIfMarkedAsReused() {
-            TestExtensionContext context = new FakeTestExtensionContext(OnePortTest.class);
+            TestExtensionContext context = new FakeTestExtensionContext(DoNotRecreateContainerTest.class);
             dockerExtension.beforeEach(context);
             verify(dockerClient, never()).startContainer(any(), anyMap(), any());
         }
@@ -90,7 +90,7 @@ public class DockerExtensionTest {
 
         @Test
         public void notStartContainerIfMarkedAsRecreated() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(RecreateContainerTest.class);
+            ContainerExtensionContext context = new FakeContainerExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient, never()).startContainer(any(), anyMap(), any());
         }
@@ -221,12 +221,12 @@ public class DockerExtensionTest {
             when(dockerClient.startContainer(anyString(), anyMap(),
                 any()))
                 .thenReturn(CONTAINER_ID);
-            dockerExtension.beforeEach(new FakeTestExtensionContext(RecreateContainerTest.class));
+            dockerExtension.beforeEach(new FakeTestExtensionContext(DefaultCreationContainerTest.class));
         }
 
         @Test
         public void stopContainer() {
-            TestExtensionContext context = new FakeTestExtensionContext(RecreateContainerTest.class);
+            TestExtensionContext context = new FakeTestExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.afterEach(context);
             verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
         }
@@ -262,60 +262,67 @@ public class DockerExtensionTest {
 
         @Test
         public void notStopContainerMarkedAsRenewable() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(RecreateContainerTest.class);
+            ContainerExtensionContext context = new FakeContainerExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.afterAll(context);
             verify(dockerClient, never()).stopAndRemoveContainer(any());
         }
     }
 
-    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800))
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800), newForEachCase = false)
     private static class OnePortTest {
 
     }
 
-    @Docker(image = "wantedImage", ports = {@Port(exposed = 8801, inner = 8800), @Port(exposed = 9901, inner = 9900)})
+    @Docker(image = "wantedImage", ports = {@Port(exposed = 8801, inner = 8800), @Port(exposed = 9901, inner = 9900)},
+        newForEachCase = false)
     private static class MultiplePortTest {
 
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-        environments = @Environment(key = "toTest", value = "myValue"))
+        environments = @Environment(key = "toTest", value = "myValue"), newForEachCase = false)
     private static class OneEnvironmentTest {
 
     }
 
-    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800), waitFor = @WaitFor(WAITED_LOG))
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800), waitFor = @WaitFor(WAITED_LOG),
+        newForEachCase = false)
     private static class WaitForLogTest {
 
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-        waitFor = @WaitFor(value = WAITED_LOG, timeoutInMillis = 10))
+        waitFor = @WaitFor(value = WAITED_LOG, timeoutInMillis = 10), newForEachCase = false)
     private static class TimeoutTest {
 
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-        waitFor = @WaitFor(value = NOTHING, timeoutInMillis = 10))
+        waitFor = @WaitFor(value = NOTHING, timeoutInMillis = 10), newForEachCase = false)
     private static class WaitForNothingTest {
 
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-        waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 200))
+        waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 200), newForEachCase = false)
     private static class WaitForNotPresentLogTest {
 
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-        waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 2000))
+        waitFor = @WaitFor(value = "unfoundable log", timeoutInMillis = 2000), newForEachCase = false)
     private static class InterruptionTest {
 
     }
 
-    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
-        newForEachCase = true)
-    private static class RecreateContainerTest {
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800))
+    private static class DefaultCreationContainerTest {
 
     }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800), newForEachCase = false)
+    private static class DoNotRecreateContainerTest {
+
+    }
+
 }
