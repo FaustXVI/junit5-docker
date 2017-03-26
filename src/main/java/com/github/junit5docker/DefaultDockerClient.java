@@ -36,7 +36,7 @@ class DefaultDockerClient implements DockerClientAdapter {
     @Override
     public void stopAndRemoveContainer(String containerId) {
         dockerClient.stopContainerCmd(containerId).exec();
-        dockerClient.removeContainerCmd(containerId).exec();
+        dockerClient.removeContainerCmd(containerId).withRemoveVolumes(true).exec();
     }
 
     @Override
