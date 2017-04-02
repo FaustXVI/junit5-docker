@@ -49,7 +49,6 @@ public class Containers {
     }
 
     public void updateStarted() {
-        System.out.println("Containers.updateStarted");
         containersStartedByExtension = getContainers();
         containersInspect = containersStartedByExtension.stream()
             .map(c -> dockerClient.inspectContainerCmd(c.getId()).exec())
@@ -86,7 +85,7 @@ public class Containers {
     }
 
     public void verifyAllClean() {
-        if(remainingContainers == null) updateRemainings();
+        if (remainingContainers == null) updateRemainings();
         remainingContainers
             .forEach(container -> {
                 dockerClient.stopContainerCmd(container.getId()).exec();

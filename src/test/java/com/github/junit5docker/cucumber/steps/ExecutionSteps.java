@@ -28,9 +28,11 @@ public class ExecutionSteps {
     @When("^you run your tests? :$")
     public void executeTest() throws Exception {
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<JupiterExecutionListener> future = executor.submit(() -> testEngine.executeTestsForClass(compiledClass.getCompiledClass()));
+        Future<JupiterExecutionListener> future = executor.submit(
+            () -> testEngine.executeTestsForClass(compiledClass.getCompiledClass())
+        );
         try {
-            JupiterExecutionListener listener = future.get(15, TimeUnit.SECONDS);
+            JupiterExecutionListener listener = future.get(1, TimeUnit.MINUTES);
             assertThat(listener.allTestsPassed())
                 .overridingErrorMessage("Tests should be green")
                 .isTrue();

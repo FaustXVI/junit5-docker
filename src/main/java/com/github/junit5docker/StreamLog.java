@@ -3,6 +3,7 @@ package com.github.junit5docker;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.core.command.LogContainerResultCallback;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -42,6 +43,13 @@ class StreamLog extends LogContainerResultCallback {
     }
 
     public Stream<String> stream() {
-        return StreamSupport.stream(spliteratorUnknownSize(queueIterator, 0), false);
+        return StreamSupport.stream(spliteratorUnknownSize(queueIterator, 0), false)
+            .onClose(() -> {
+                try {
+                    this.close();
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            });
     }
 }

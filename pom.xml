@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.faustxvi</groupId>
@@ -207,25 +208,34 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.7.8</version>
                 <configuration>
+                    <skip>${skipTests}</skip>
                     <haltOnFailure>true</haltOnFailure>
                     <rules>
                         <rule>
                             <element>BUNDLE</element>
                             <limits>
                                 <limit>
-                                    <counter>INSTRUCTION</counter>
+                                    <counter>LINE</counter>
                                     <value>COVEREDRATIO</value>
                                     <minimum>1.00</minimum>
+                                </limit>
+                                <limit>
+                                    <counter>INSTRUCTION</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <!-- coverage is not at 100% because of jacoco try with resource problem -->
+                                    <minimum>0.9</minimum>
                                 </limit>
                                 <limit>
                                     <counter>BRANCH</counter>
                                     <value>COVEREDRATIO</value>
-                                    <minimum>1.00</minimum>
+                                    <!-- coverage is not at 100% because of jacoco try with resource problem -->
+                                    <minimum>0.9</minimum>
                                 </limit>
                                 <limit>
                                     <counter>COMPLEXITY</counter>
                                     <value>MISSEDCOUNT</value>
-                                    <maximum>0</maximum>
+                                    <!-- coverage is not at 100% because of jacoco try with resource problem -->
+                                    <maximum>4</maximum>
                                 </limit>
                             </limits>
                         </rule>
@@ -293,7 +303,7 @@
                         </goals>
                         <configuration>
                             <configLocation>checkstyle-tests.xml</configLocation>
-                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            <sourceDirectories>${project.testCompileSourceRoots}</sourceDirectories>
                         </configuration>
                     </execution>
                 </executions>

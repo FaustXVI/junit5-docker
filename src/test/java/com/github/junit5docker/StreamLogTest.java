@@ -2,11 +2,13 @@ package com.github.junit5docker;
 
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.StreamType;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -14,6 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
 import static com.github.junit5docker.assertions.ExecutionAssertions.assertNoInterruptionThrown;
@@ -140,6 +143,32 @@ public class StreamLogTest {
         executionStarted.await();
         interruptStream();
         assertExecutionOf(threadStillInterrupted::get).hasNoAssertionFailures();
+    }
+
+    @Test
+    public void shouldCloseItselfWhenStreamIsClosed() {
+        AtomicBoolean closed = new AtomicBoolean(false);
+        StreamLog customStreamLog = new StreamLog() {
+            @Override
+            public void close() throws IOException {
+                super.close();
+                closed.set(true);
+            }
+        };
+        customStreamLog.stream().close();
+        assertThat(closed.get()).as("Should close connection when stream closes").isTrue();
+    }
+
+    @Test
+    public void shouldThrowAnExceptionIfErrorOccursWhileClosing() {
+        StreamLog customStreamLog = new StreamLog() {
+            @Override
+            public void close() throws IOException {
+                throw new IOException("Test error");
+            }
+        };
+        Assertions.assertThatThrownBy(customStreamLog.stream()::close)
+            .hasCauseInstanceOf(IOException.class);
     }
 
     private Runnable completeStreamOnceStarted(CountDownLatch streamStarted) {
