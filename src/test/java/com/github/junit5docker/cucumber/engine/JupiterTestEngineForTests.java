@@ -32,6 +32,7 @@ public class JupiterTestEngineForTests {
     private JupiterExecutionListener executeTests(LauncherDiscoveryRequest request) throws Exception {
         TestDescriptor testDescriptor = createTestDescriptorForCucumber(
             engine.discover(request, forEngine(engine.getId())), containers);
+        eventRecorder.reset();
         engine.execute(new ExecutionRequest(testDescriptor, eventRecorder, request.getConfigurationParameters()));
         return eventRecorder;
     }

@@ -38,4 +38,8 @@ public class JupiterExecutionListener implements EngineExecutionListener {
     public boolean allTestsPassed() {
         return allTestsPassed;
     }
+
+    public void reset() {
+        allTestsPassed = true;
+    }
 }

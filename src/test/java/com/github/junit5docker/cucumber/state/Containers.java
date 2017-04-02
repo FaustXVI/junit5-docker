@@ -86,6 +86,7 @@ public class Containers {
     }
 
     public void verifyAllClean() {
+        if(remainingContainers == null) updateRemainings();
         remainingContainers
             .forEach(container -> {
                 dockerClient.stopContainerCmd(container.getId()).exec();
