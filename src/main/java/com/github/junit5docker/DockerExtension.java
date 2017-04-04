@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
@@ -74,7 +75,11 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
     }
 
     private Supplier<Boolean> findFirstLogContaining(String logToFind) {
-        return () -> dockerClient.logs(containerId).anyMatch(log -> log.contains(logToFind));
+        return () -> {
+            try (Stream<String> logs = dockerClient.logs(containerId)) {
+                return logs.anyMatch(log -> log.contains(logToFind));
+            }
+        };
     }
 
     private Docker findDockerAnnotation(ExtensionContext extensionContext) {

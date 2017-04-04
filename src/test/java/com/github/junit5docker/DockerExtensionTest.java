@@ -32,6 +32,7 @@ import static com.github.junit5docker.fakes.FakeLog.unfoundableLog;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -136,6 +137,29 @@ public class DockerExtensionTest {
                     .overridingErrorMessage("Should have waited for log to appear during %d ms but waited %d ms", 100,
                         duration)
                     .isGreaterThanOrEqualTo(100);
+            }
+
+            @Test
+            public void closeLogStreamOnceFound() throws ExecutionException, InterruptedException {
+                AtomicBoolean streamClosed = new AtomicBoolean(false);
+                Stream<String> logStream = Stream.of(WAITED_LOG).onClose(() -> streamClosed.set(true));
+                when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
+                dockerExtension.beforeAll(new FakeContainerExtensionContext(WaitForLogTest.class));
+                assertThat(streamClosed.get()).as("Stream should be closed").isTrue();
+            }
+
+            @Test
+            public void closeLogEvenWithExceptionOnRead() throws ExecutionException, InterruptedException {
+                AtomicBoolean streamClosed = new AtomicBoolean(false);
+                Stream<String> logStream = Stream.<String>generate(() -> {
+                    throw new RuntimeException();
+                })
+                    .onClose(() -> streamClosed.set(true));
+                when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
+                assertThatThrownBy(
+                    () -> dockerExtension.beforeAll(new FakeContainerExtensionContext(WaitForLogTest.class))
+                );
+                assertThat(streamClosed.get()).as("Stream should be closed").isTrue();
             }
 
             @Test
