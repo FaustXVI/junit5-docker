@@ -98,6 +98,11 @@ public class MyAwesomeTest {
           // Add your test content here
       }
 
+      @Test
+      void checkMyCodeWithAnotherContainer() {
+          // Add your test content here
+      }
+
   }
 ```
 
