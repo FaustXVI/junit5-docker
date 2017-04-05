@@ -47,8 +47,8 @@ class StreamLog extends LogContainerResultCallback {
             .onClose(() -> {
                 try {
                     this.close();
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
+                } catch (Throwable e) {
+                    // throw new IllegalStateException(e);
                 }
             });
     }
