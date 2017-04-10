@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
+import static com.github.dockerjava.core.DefaultDockerClientConfig.createDefaultConfigBuilder;
 import static com.github.junit5docker.assertions.CountDownLatchAssertions.assertThat;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;

@@ -32,7 +32,7 @@ public class ExecutionSteps {
             () -> testEngine.executeTestsForClass(compiledClass.getCompiledClass())
         );
         try {
-            JupiterExecutionListener listener = future.get(1, TimeUnit.MINUTES);
+            JupiterExecutionListener listener = future.get(5, TimeUnit.MINUTES);
             assertThat(listener.allTestsPassed())
                 .overridingErrorMessage("Tests should be green")
                 .isTrue();

@@ -19,6 +19,7 @@
         <junit.vintage.version>${junit.version}.0-M3</junit.vintage.version>
         <gpg.skip>true</gpg.skip>
         <additionalparam>-notimestamp</additionalparam>
+        <junixsocket.version>2.0.4</junixsocket.version>
     </properties>
 
     <profiles>
@@ -176,6 +177,7 @@
                         <unusedDeclaredDependency>org.junit.platform</unusedDeclaredDependency>
                         <unusedDeclaredDependency>ch.qos.logback</unusedDeclaredDependency>
                         <unusedDeclaredDependency>info.cukes:cucumber-picocontainer</unusedDeclaredDependency>
+                        <unusedDeclaredDependency>com.kohlschutter.junixsocket</unusedDeclaredDependency>
                     </ignoredUnusedDeclaredDependencies>
                 </configuration>
             </plugin>
@@ -354,7 +356,17 @@
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java</artifactId>
-            <version>3.0.0</version>
+            <version>3.0.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.kohlschutter.junixsocket</groupId>
+            <artifactId>junixsocket-common</artifactId>
+            <version>${junixsocket.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.kohlschutter.junixsocket</groupId>
+            <artifactId>junixsocket-native-common</artifactId>
+            <version>${junixsocket.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -362,15 +374,20 @@
             <version>${junit.jupiter.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver</artifactId>
+            <version>3.4.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.3.1</version>
+            <version>4.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>4.3</version>
+            <version>4.4.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>

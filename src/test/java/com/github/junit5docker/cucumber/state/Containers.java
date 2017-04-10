@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
+import static com.github.dockerjava.core.DefaultDockerClientConfig.createDefaultConfigBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Containers {
