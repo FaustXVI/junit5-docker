@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import static com.github.dockerjava.api.model.ExposedPort.tcp;
 import static com.github.dockerjava.api.model.Ports.Binding.bindPort;
-import static com.github.dockerjava.core.DockerClientConfig.createDefaultConfigBuilder;
+import static com.github.dockerjava.core.DefaultDockerClientConfig.createDefaultConfigBuilder;
 import static java.util.stream.Collectors.toList;
 
 class DefaultDockerClient implements DockerClientAdapter {
