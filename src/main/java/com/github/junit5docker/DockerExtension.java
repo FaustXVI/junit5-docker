@@ -4,9 +4,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ContainerExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.TestExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,13 +32,13 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
     }
 
     @Override
-    public void beforeAll(ContainerExtensionContext containerExtensionContext) {
+    public void beforeAll(ExtensionContext containerExtensionContext) {
         Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
         if (!dockerAnnotation.newForEachCase()) startContainer(dockerAnnotation);
     }
 
     @Override
-    public void beforeEach(TestExtensionContext context) {
+    public void beforeEach(ExtensionContext context) {
         Docker dockerAnnotation = findDockerAnnotation(context);
         if (dockerAnnotation.newForEachCase()) startContainer(dockerAnnotation);
     }
@@ -111,13 +109,13 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
     }
 
     @Override
-    public void afterAll(ContainerExtensionContext containerExtensionContext) {
+    public void afterAll(ExtensionContext containerExtensionContext) {
         Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
         if (!dockerAnnotation.newForEachCase()) dockerClient.stopAndRemoveContainer(containerId);
     }
 
     @Override
-    public void afterEach(TestExtensionContext context) {
+    public void afterEach(ExtensionContext context) {
         Docker dockerAnnotation = findDockerAnnotation(context);
         if (dockerAnnotation.newForEachCase()) dockerClient.stopAndRemoveContainer(containerId);
     }

@@ -1,12 +1,10 @@
 package com.github.junit5docker;
 
-import com.github.junit5docker.fakes.FakeContainerExtensionContext;
-import com.github.junit5docker.fakes.FakeTestExtensionContext;
+import com.github.junit5docker.fakes.FakeExtensionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ContainerExtensionContext;
-import org.junit.jupiter.api.extension.TestExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
@@ -56,7 +54,7 @@ public class DockerExtensionTest {
 
         @Test
         public void startContainerNotMarked() {
-            TestExtensionContext context = new FakeTestExtensionContext(DefaultCreationContainerTest.class);
+            ExtensionContext context = new FakeExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.beforeEach(context);
             verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
                 eq(new PortBinding(8801, 8800)));
@@ -64,7 +62,7 @@ public class DockerExtensionTest {
 
         @Test
         public void notStartContainerIfMarkedAsReused() {
-            TestExtensionContext context = new FakeTestExtensionContext(DoNotRecreateContainerTest.class);
+            ExtensionContext context = new FakeExtensionContext(DoNotRecreateContainerTest.class);
             dockerExtension.beforeEach(context);
             verify(dockerClient, never()).startContainer(any(), anyMap(), any());
         }
@@ -83,7 +81,7 @@ public class DockerExtensionTest {
 
         @Test
         public void startContainerWithOnePort() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(OnePortTest.class);
+            ExtensionContext context = new FakeExtensionContext(OnePortTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
                 eq(new PortBinding(8801, 8800)));
@@ -91,14 +89,14 @@ public class DockerExtensionTest {
 
         @Test
         public void notStartContainerIfMarkedAsRecreated() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(DefaultCreationContainerTest.class);
+            ExtensionContext context = new FakeExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient, never()).startContainer(any(), anyMap(), any());
         }
 
         @Test
         public void startContainerWithMultiplePorts() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(MultiplePortTest.class);
+            ExtensionContext context = new FakeExtensionContext(MultiplePortTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
                 eq(new PortBinding(8801, 8800)),
@@ -107,14 +105,14 @@ public class DockerExtensionTest {
 
         @Test
         public void notWaitByDefault() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForNothingTest.class);
+            ExtensionContext context = new FakeExtensionContext(WaitForNothingTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient, never()).logs(anyString());
         }
 
         @Test
         public void startContainerWithEnvironmentVariables() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(OneEnvironmentTest.class);
+            ExtensionContext context = new FakeExtensionContext(OneEnvironmentTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient).startContainer(eq("wantedImage"),
                 mapArgumentCaptor.capture(), any());
@@ -130,7 +128,7 @@ public class DockerExtensionTest {
 
             @Test
             public void waitForLogToAppear() throws ExecutionException, InterruptedException {
-                ContainerExtensionContext context = new FakeContainerExtensionContext(WaitForLogTest.class);
+                ExtensionContext context = new FakeExtensionContext(WaitForLogTest.class);
                 long duration = sendLogAndTimeExecution(100,
                     TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
                 assertThat(duration)
@@ -144,7 +142,7 @@ public class DockerExtensionTest {
                 AtomicBoolean streamClosed = new AtomicBoolean(false);
                 Stream<String> logStream = Stream.of(WAITED_LOG).onClose(() -> streamClosed.set(true));
                 when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
-                dockerExtension.beforeAll(new FakeContainerExtensionContext(WaitForLogTest.class));
+                dockerExtension.beforeAll(new FakeExtensionContext(WaitForLogTest.class));
                 assertThat(streamClosed.get()).as("Stream should be closed").isTrue();
             }
 
@@ -157,7 +155,7 @@ public class DockerExtensionTest {
                     .onClose(() -> streamClosed.set(true));
                 when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
                 assertThatThrownBy(
-                    () -> dockerExtension.beforeAll(new FakeContainerExtensionContext(WaitForLogTest.class))
+                    () -> dockerExtension.beforeAll(new FakeExtensionContext(WaitForLogTest.class))
                 );
                 assertThat(streamClosed.get()).as("Stream should be closed").isTrue();
             }
@@ -165,7 +163,7 @@ public class DockerExtensionTest {
             @Test
             public void timeoutIfLogDoesNotAppear() {
                 assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
-                    ContainerExtensionContext context = new FakeContainerExtensionContext(TimeoutTest.class);
+                    ExtensionContext context = new FakeExtensionContext(TimeoutTest.class);
                     sendLogAndTimeExecution(1, TimeUnit.SECONDS, () -> dockerExtension.beforeAll(context));
                 }).withMessageContaining("Timeout");
             }
@@ -173,8 +171,8 @@ public class DockerExtensionTest {
             @Test
             public void throwsExceptionIfLogNotFoundAndLogsEnded() {
                 assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
-                    ContainerExtensionContext context =
-                        new FakeContainerExtensionContext(WaitForNotPresentLogTest.class);
+                    ExtensionContext context =
+                        new FakeExtensionContext(WaitForNotPresentLogTest.class);
                     sendLogAndTimeExecution(100, TimeUnit.MILLISECONDS,
                         () -> dockerExtension.beforeAll(context));
                 }).withMessageContaining("not found");
@@ -182,7 +180,7 @@ public class DockerExtensionTest {
 
             @Test
             public void beInterruptible() throws ExecutionException, InterruptedException {
-                ContainerExtensionContext context = new FakeContainerExtensionContext(InterruptionTest.class);
+                ExtensionContext context = new FakeExtensionContext(InterruptionTest.class);
                 Thread mainThread = Thread.currentThread();
                 CountDownLatch logRequest = new CountDownLatch(1);
                 when(dockerClient.logs(argThat(argument -> true))).thenAnswer(mock -> {
@@ -245,19 +243,19 @@ public class DockerExtensionTest {
             when(dockerClient.startContainer(anyString(), anyMap(),
                 any()))
                 .thenReturn(CONTAINER_ID);
-            dockerExtension.beforeEach(new FakeTestExtensionContext(DefaultCreationContainerTest.class));
+            dockerExtension.beforeEach(new FakeExtensionContext(DefaultCreationContainerTest.class));
         }
 
         @Test
         public void stopContainer() {
-            TestExtensionContext context = new FakeTestExtensionContext(DefaultCreationContainerTest.class);
+            ExtensionContext context = new FakeExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.afterEach(context);
             verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
         }
 
         @Test
         public void notStopContainerNotMarkedAsRenewable() {
-            TestExtensionContext context = new FakeTestExtensionContext(OnePortTest.class);
+            ExtensionContext context = new FakeExtensionContext(OnePortTest.class);
             dockerExtension.afterEach(context);
             verify(dockerClient, never()).stopAndRemoveContainer(any());
         }
@@ -274,19 +272,19 @@ public class DockerExtensionTest {
             when(dockerClient.startContainer(anyString(), anyMap(),
                 any()))
                 .thenReturn(CONTAINER_ID);
-            dockerExtension.beforeAll(new FakeContainerExtensionContext(OnePortTest.class));
+            dockerExtension.beforeAll(new FakeExtensionContext(OnePortTest.class));
         }
 
         @Test
         public void stopContainer() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(OnePortTest.class);
+            ExtensionContext context = new FakeExtensionContext(OnePortTest.class);
             dockerExtension.afterAll(context);
             verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
         }
 
         @Test
         public void notStopContainerMarkedAsRenewable() {
-            ContainerExtensionContext context = new FakeContainerExtensionContext(DefaultCreationContainerTest.class);
+            ExtensionContext context = new FakeExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.afterAll(context);
             verify(dockerClient, never()).stopAndRemoveContainer(any());
         }

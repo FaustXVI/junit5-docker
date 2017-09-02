@@ -2,8 +2,8 @@ package com.github.junit5docker.cucumber.state;
 
 import com.github.junit5docker.Docker;
 import com.github.junit5docker.WaitFor;
-import com.github.junit5docker.fakes.FakeContainerExtensionContext;
-import org.junit.jupiter.api.extension.ContainerExtensionContext;
+import com.github.junit5docker.fakes.FakeExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,7 +34,7 @@ public class CompiledClass {
             .collect(Collectors.toList());
     }
 
-    public ContainerExtensionContext getExtensionContext() {
-        return new FakeContainerExtensionContext(compiledClass);
+    public ExtensionContext getExtensionContext() {
+        return new FakeExtensionContext(compiledClass);
     }
 }
