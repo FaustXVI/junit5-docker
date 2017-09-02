@@ -2,7 +2,7 @@ package com.github.junit5docker.cucumber.engine;
 
 import com.github.junit5docker.cucumber.state.Containers;
 import org.junit.jupiter.engine.descriptor.ClassTestDescriptor;
-import org.junit.jupiter.engine.descriptor.MethodTestDescriptor;
+import org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.support.hierarchical.Node;
 
@@ -25,6 +25,7 @@ final class TestDescriptorForCucumber implements InvocationHandler {
         this.containers = containers;
     }
 
+    // Method is used via introspection in #invoke
     public Set<? extends TestDescriptor> getChildren() {
         return testDescriptor.getChildren().stream()
             .map((discover1) -> (TestDescriptor) createTestDescriptorForCucumber(discover1, containers))
@@ -46,9 +47,9 @@ final class TestDescriptorForCucumber implements InvocationHandler {
 
     private TestDescriptor wrapDescriptorForCucumber() {
         TestDescriptor usedDescriptor = this.testDescriptor;
-        if (testDescriptor instanceof MethodTestDescriptor) {
+        if (testDescriptor instanceof TestMethodTestDescriptor) {
             usedDescriptor =
-                new MethodTestDescriptorForCucumber((MethodTestDescriptor) testDescriptor, containers);
+                new MethodTestDescriptorForCucumber((TestMethodTestDescriptor) testDescriptor, containers);
         }
         if (testDescriptor instanceof ClassTestDescriptor) {
             usedDescriptor =

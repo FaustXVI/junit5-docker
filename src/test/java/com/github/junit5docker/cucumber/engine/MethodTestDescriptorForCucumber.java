@@ -1,14 +1,14 @@
 package com.github.junit5docker.cucumber.engine;
 
 import com.github.junit5docker.cucumber.state.Containers;
-import org.junit.jupiter.engine.descriptor.MethodTestDescriptor;
+import org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor;
 import org.junit.jupiter.engine.execution.JupiterEngineExecutionContext;
 
-class MethodTestDescriptorForCucumber extends MethodTestDescriptor {
+class MethodTestDescriptorForCucumber extends TestMethodTestDescriptor {
 
     private Containers containers;
 
-    MethodTestDescriptorForCucumber(MethodTestDescriptor methodTestDescriptor, Containers containers) {
+    MethodTestDescriptorForCucumber(TestMethodTestDescriptor methodTestDescriptor, Containers containers) {
         super(methodTestDescriptor.getUniqueId(),
             methodTestDescriptor.getTestClass(),
             methodTestDescriptor.getTestMethod());
@@ -16,15 +16,16 @@ class MethodTestDescriptorForCucumber extends MethodTestDescriptor {
     }
 
     @Override
-    protected void invokeTestMethod(JupiterEngineExecutionContext context) {
+    protected void invokeTestMethod(JupiterEngineExecutionContext context, DynamicTestExecutor dynamicTestExecutor) {
         containers.updateStartedForTest();
-        super.invokeTestMethod(context);
+        super.invokeTestMethod(context, dynamicTestExecutor);
     }
 
     @Override
-    public JupiterEngineExecutionContext execute(JupiterEngineExecutionContext context) throws Exception {
+    public JupiterEngineExecutionContext execute(JupiterEngineExecutionContext context,
+                                                 DynamicTestExecutor dynamicTestExecutor) throws Exception {
         try {
-            return super.execute(context);
+            return super.execute(context, dynamicTestExecutor);
         } finally {
             containers.updateRemainingsForTest();
         }

@@ -8,21 +8,29 @@ class ClassTestDescriptorForCucumber extends ClassTestDescriptor {
 
     private final Containers containers;
 
+    private final ClassTestDescriptor testDescriptor;
+
     ClassTestDescriptorForCucumber(ClassTestDescriptor testDescriptor, Containers containers) {
         super(testDescriptor.getUniqueId(), testDescriptor.getTestClass());
+        this.testDescriptor = testDescriptor;
         this.containers = containers;
     }
 
     @Override
+    public JupiterEngineExecutionContext prepare(JupiterEngineExecutionContext context) {
+        return testDescriptor.prepare(context);
+    }
+
+    @Override
     public JupiterEngineExecutionContext before(JupiterEngineExecutionContext context) throws Exception {
-        JupiterEngineExecutionContext result = super.before(context);
+        JupiterEngineExecutionContext result = testDescriptor.before(context);
         containers.updateStarted();
         return result;
     }
 
     @Override
     public void after(JupiterEngineExecutionContext context) throws Exception {
-        super.after(context);
+        testDescriptor.after(context);
         containers.updateRemainings();
     }
 }
