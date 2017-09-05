@@ -19,6 +19,26 @@
         <junit.vintage.version>${junit.version}.0-RC3</junit.vintage.version>
         <gpg.skip>true</gpg.skip>
         <additionalparam>-notimestamp</additionalparam>
+        <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>2.19</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
+        <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
+        <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
+        <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+        <nexus-staging-maven-plugin.version>1.6.7</nexus-staging-maven-plugin.version>
+        <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
+        <jacoco-maven-plugin.version>0.7.8</jacoco-maven-plugin.version>
+        <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
+        <findbugs-maven-plugin.version>3.0.4</findbugs-maven-plugin.version>
+        <maven-pmd-plugin.version>3.7</maven-pmd-plugin.version>
+        <docker-java.version>3.0.8</docker-java.version>
+        <httpclient.version>4.5</httpclient.version>
+        <httpcore.version>4.4.5</httpcore.version>
+        <logback.version>1.1.7</logback.version>
+        <mockito.version>2.1.0</mockito.version>
+        <assertj-core.version>3.5.2</assertj-core.version>
+        <cucumber.version>1.2.5</cucumber.version>
     </properties>
 
     <profiles>
@@ -40,7 +60,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -49,7 +69,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19</version>
+                <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <!-- Needed to make some encoding dependant tests to fail -->
                     <argLine>${argLine} -Dfile.encoding=ISO-8859-1</argLine>
@@ -70,7 +90,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>${maven-failsafe-plugin.version}</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.junit.platform</groupId>
@@ -112,7 +132,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.6</version>
+                <version>${maven-gpg-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -129,7 +149,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>${maven-source-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -142,7 +162,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>${maven-javadoc-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -158,7 +178,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.10</version>
+                <version>${maven-dependency-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>analyze-dependencies</id>
@@ -182,7 +202,7 @@
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.7</version>
+                <version>${nexus-staging-maven-plugin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
@@ -193,7 +213,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>2.5.3</version>
+                <version>${maven-release-plugin.version}</version>
                 <configuration>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <useReleaseProfile>false</useReleaseProfile>
@@ -205,7 +225,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.8</version>
+                <version>${jacoco-maven-plugin.version}</version>
                 <configuration>
                     <skip>${skipTests}</skip>
                     <haltOnFailure>true</haltOnFailure>
@@ -277,7 +297,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
+                <version>${maven-checkstyle-plugin.version}</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
@@ -310,7 +330,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.4</version>
+                <version>${findbugs-maven-plugin.version}</version>
                 <configuration>
                     <effort>Max</effort>
                     <threshold>Low</threshold>
@@ -328,7 +348,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.7</version>
+                <version>${maven-pmd-plugin.version}</version>
                 <configuration>
                     <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
@@ -354,7 +374,7 @@
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java</artifactId>
-            <version>3.0.8</version>
+            <version>${docker-java.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -364,13 +384,13 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5</version>
+            <version>${httpclient.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>4.4.5</version>
+            <version>${httpcore.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -394,25 +414,25 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.1.7</version>
+            <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
-            <version>1.1.7</version>
+            <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>2.1.0</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.5.2</version>
+            <version>${assertj-core.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -424,19 +444,19 @@
         <dependency>
             <groupId>info.cukes</groupId>
             <artifactId>cucumber-core</artifactId>
-            <version>1.2.5</version>
+            <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>info.cukes</groupId>
             <artifactId>cucumber-java</artifactId>
-            <version>1.2.5</version>
+            <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>info.cukes</groupId>
             <artifactId>cucumber-junit</artifactId>
-            <version>1.2.5</version>
+            <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -448,7 +468,7 @@
         <dependency>
             <groupId>info.cukes</groupId>
             <artifactId>cucumber-picocontainer</artifactId>
-            <version>1.2.5</version>
+            <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
