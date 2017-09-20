@@ -6,14 +6,14 @@ order: 0
 ---
 
   [`JUnit5-Docker`](https://github.com/FaustXVI/junit5-docker) is a `JUnit5` extension that start docker containers before running tests and stop them afterwards.
-  _This is the documentation for the version 1.0.0-SNAPSHOT._
+  _This is the documentation for the version 1.0.1-SNAPSHOT._
 
   _The last released version can be found at [https://faustxvi.github.io/junit5-docker/current](https://faustxvi.github.io/junit5-docker/current) and the documentation of the under developpment version can be found at [https://faustxvi.github.io/junit5-docker/snapshot](https://faustxvi.github.io/junit5-docker/snapshot)_
 
   Dependency
   ----------
 
-  {% if "1.0.0-SNAPSHOT" contains "SNAPSHOT" %}
+  {% if "1.0.1-SNAPSHOT" contains "SNAPSHOT" %}
 
   Since this is a SNAPSHOT version, you can't find it on maven central so you'll need to add the repository to your `pom.xml` like this :
 
@@ -34,7 +34,7 @@ order: 0
   <dependency>
   <groupId>com.github.faustxvi</groupId>
   <artifactId>junit5-docker</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.1-SNAPSHOT</version>
   <scope>test</scope>
   </dependency>
   ```
@@ -43,7 +43,7 @@ order: 0
   -----
 
   The entrypoint is the `@Docker` annotation.
-  Please refer to the [Javadoc](https://faustxvi.github.io/junit5-docker/javadoc/1.0.0-SNAPSHOT) for more details.
+  Please refer to the [Javadoc](https://faustxvi.github.io/junit5-docker/javadoc/1.0.1-SNAPSHOT) for more details.
 
   The container is started before each test method is called; and stopped afterward.
 
