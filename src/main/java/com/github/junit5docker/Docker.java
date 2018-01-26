@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 import static com.github.junit5docker.WaitFor.NOTHING;
 
 /**
- * <p>This annotation is the junit-docker entry point.</p>
+ * <p>This annotation is a junit-docker entry point.</p>
  *
  * <p>Adding this annotation to a test's class will start a docker container before running the tests and will be stop
  * at the end of the tests. This is done once per class.</p>
@@ -55,7 +55,8 @@ public @interface Docker {
     boolean newForEachCase() default true;
 
     /**
-     * The names of the networks for the container to join.
+     * @return the names of the networks for the container to join.
+     * Empty if the container has no networks to join.
      */
     String[] networks() default {};
 

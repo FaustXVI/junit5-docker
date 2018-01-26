@@ -25,13 +25,15 @@ import static com.github.junit5docker.StartMultipleDockerAnnotationsIT.TEST_NETW
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Dockers({
-    @Docker(image = "faustxvi/simple-two-ports", ports = @Port(exposed = 8081, inner = 8080), networks = {TEST_NETWORK_1, TEST_NETWORK_2}),
-    @Docker(image = "faustxvi/simple-two-ports", ports = @Port(exposed = 8082, inner = 8080), networks = {TEST_NETWORK_1, TEST_NETWORK_2})
-})
+    @Docker(image = "faustxvi/simple-two-ports", ports = @Port(exposed = 8081, inner = 8080),
+        networks = {TEST_NETWORK_1, TEST_NETWORK_2}),
+    @Docker(image = "faustxvi/simple-two-ports", ports = @Port(exposed = 8082, inner = 8080),
+        networks = {TEST_NETWORK_1, TEST_NETWORK_2})})
 @DisplayName("Multiple docker containers with multiple networks")
 class StartMultipleDockerAnnotationsIT {
 
     static final String TEST_NETWORK_1 = "testNetwork1";
+
     static final String TEST_NETWORK_2 = "testNetwork2";
 
     @BeforeAll
@@ -83,8 +85,13 @@ class StartMultipleDockerAnnotationsIT {
     }
 
     private static List<Network> getNetworks(String networkName) {
-        DockerClient dockerClient = DockerClientBuilder.getInstance(createDefaultConfigBuilder().withApiVersion("1.22")).build();
-        return dockerClient.listNetworksCmd().exec().stream().filter(n -> networkName.equals(n.getName())).collect(Collectors.toList());
+        DockerClient dockerClient = DockerClientBuilder.getInstance(createDefaultConfigBuilder().withApiVersion("1.22"))
+                                                       .build();
+        return dockerClient.listNetworksCmd()
+                           .exec()
+                           .stream()
+                           .filter(n -> networkName.equals(n.getName()))
+                           .collect(Collectors.toList());
     }
 
     private static boolean canConnectOnPort(int port) {

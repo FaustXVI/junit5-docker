@@ -89,7 +89,8 @@ public class DefaultDockerClientIT {
             @Test
             @DisplayName("start a container without ports")
             public void shouldStartContainer() {
-                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap(), null).getContainerId();
+                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap(), null)
+                                                        .getContainerId();
                 assertThat(dockerClient.listContainersCmd().exec()).hasSize(existingContainers.size() + 1);
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 assertThat(startedContainer.getConfig().getImage()).isEqualTo(WANTED_IMAGE);
@@ -117,11 +118,11 @@ public class DefaultDockerClientIT {
                 Map<String, String> environments = new HashMap<>();
                 environments.put("khaled", "souf");
                 environments.put("abdellah", "stagiaire");
-                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, environments, null).getContainerId();
+                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, environments, null)
+                                                        .getContainerId();
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 List<String> envs = Arrays.asList(startedContainer.getConfig().getEnv());
-                assertThat(envs).hasSize(2 + DEFAULT_DOCKER_ENV_NUMBER)
-                    .contains("khaled=souf", "abdellah=stagiaire");
+                assertThat(envs).hasSize(2 + DEFAULT_DOCKER_ENV_NUMBER).contains("khaled=souf", "abdellah=stagiaire");
             }
         }
 
@@ -144,7 +145,8 @@ public class DefaultDockerClientIT {
             @Test
             @DisplayName("start a container after pulling the image")
             public void shouldStartContainer() {
-                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap(), null).getContainerId();
+                String containerId = defaultDockerClient.startContainer(WANTED_IMAGE, emptyMap(), null)
+                                                        .getContainerId();
                 assertThat(dockerClient.listContainersCmd().exec()).hasSize(existingContainers.size() + 1);
                 InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();
                 assertThat(startedContainer.getConfig().getImage()).isEqualTo(WANTED_IMAGE);
@@ -157,7 +159,9 @@ public class DefaultDockerClientIT {
                 @Test
                 @DisplayName("add latest to the image name if none is given")
                 public void shouldStartLatestContainer() {
-                    String containerId = defaultDockerClient.startContainer("faustxvi/simple-two-ports", emptyMap(), null).getContainerId();
+                    String containerId = defaultDockerClient.startContainer("faustxvi/simple-two-ports",
+                                                                            emptyMap(),
+                                                                            null).getContainerId();
                     List<Container> currentContainers = dockerClient.listContainersCmd().exec();
                     assertThat(currentContainers).hasSize(existingContainers.size() + 1);
                     InspectContainerResponse startedContainer = dockerClient.inspectContainerCmd(containerId).exec();

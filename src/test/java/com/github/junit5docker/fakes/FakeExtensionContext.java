@@ -11,7 +11,9 @@ import java.util.Optional;
 import java.util.Set;
 
 public class FakeExtensionContext implements ExtensionContext {
+
     private final Class<?> testSampleClass;
+
     private final ExtensionValuesStore valuesStore;
 
     public FakeExtensionContext(Class<?> testSampleClass) {

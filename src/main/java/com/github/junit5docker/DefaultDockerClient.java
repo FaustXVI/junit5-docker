@@ -30,7 +30,10 @@ class DefaultDockerClient implements DockerClientAdapter {
     }
 
     @Override
-    public ContainerInfo startContainer(String wantedImage, Map<String, String> environment, String[] networkNames, PortBinding... portBinding) {
+    public ContainerInfo startContainer(String wantedImage,
+                                        Map<String, String> environment,
+                                        String[] networkNames,
+                                        PortBinding... portBinding) {
         Ports bindings = createPortBindings(portBinding);
         List<String> environmentStrings = createEnvironmentList(environment);
         String containerId = createContainer(wantedImage, bindings, environmentStrings);
@@ -62,10 +65,15 @@ class DefaultDockerClient implements DockerClientAdapter {
     }
 
     private Optional<String> getExistingNetworkId(String networkName) {
-        return dockerClient.listNetworksCmd().exec().stream()
-                           .filter(n -> n.getName().equals(networkName))
-                           .reduce((a, b) -> {
-                               throw new IllegalStateException("Multiple networks found with the same name: " + a + ", " + b);
+        return dockerClient.listNetworksCmd()
+                           .exec()
+                           .stream()
+                           .filter(name -> name.getName().equals(networkName))
+                           .reduce((name1, name2) -> {
+                               String msg = String.format("Multiple networks found with the same name: %s and %s",
+                                                          name1,
+                                                          name2);
+                               throw new IllegalStateException(msg);
                            })
                            .map(Network::getId);
     }
