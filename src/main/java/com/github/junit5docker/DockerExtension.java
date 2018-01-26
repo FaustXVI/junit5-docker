@@ -6,12 +6,15 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -21,7 +24,6 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
 
     private final DockerClientAdapter dockerClient;
 
-    private String containerId;
 
     DockerExtension() {
         this(new DefaultDockerClient());
@@ -32,31 +34,35 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
     }
 
     @Override
-    public void beforeAll(ExtensionContext containerExtensionContext) {
-        Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
-        if (!dockerAnnotation.newForEachCase()) startContainer(dockerAnnotation);
+    public void beforeAll(ExtensionContext context) {
+        forEachDocker(context, d -> !d.newForEachCase(), this::startContainer);
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        Docker dockerAnnotation = findDockerAnnotation(context);
-        if (dockerAnnotation.newForEachCase()) startContainer(dockerAnnotation);
+        forEachDocker(context, Docker::newForEachCase, this::startContainer);
     }
 
-    private void startContainer(Docker dockerAnnotation) {
+    private static void forEachDocker(ExtensionContext context, Predicate<Docker> predicate, BiConsumer<ExtensionContext, Docker> action){
+        Arrays.stream(findDockerAnnotations(context)).filter(predicate).forEach(d -> action.accept(context, d));
+    }
+
+    private void startContainer(ExtensionContext context, Docker dockerAnnotation) {
         PortBinding[] portBindings = createPortBindings(dockerAnnotation);
         Map<String, String> environmentMap = createEnvironmentMap(dockerAnnotation);
         String imageReference = findImageName(dockerAnnotation);
         WaitFor waitFor = dockerAnnotation.waitFor();
-        containerId = dockerClient.startContainer(imageReference, environmentMap, portBindings);
-        waitForLogAccordingTo(waitFor);
+        String[] networkNames = dockerAnnotation.networks();
+        ContainerInfo containerInfo = dockerClient.startContainer(imageReference, environmentMap, networkNames, portBindings);
+        waitForLogAccordingTo(waitFor, containerInfo.getContainerId());
+        getStore(context).put(dockerAnnotation, containerInfo);
     }
 
-    private void waitForLogAccordingTo(WaitFor waitFor) {
+    private void waitForLogAccordingTo(WaitFor waitFor, String containerId) {
         String expectedLog = waitFor.value();
         if (!WaitFor.NOTHING.equals(expectedLog)) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            CompletableFuture<Boolean> logFound = supplyAsync(findFirstLogContaining(expectedLog), executor);
+            CompletableFuture<Boolean> logFound = supplyAsync(findFirstLogContaining(expectedLog, containerId), executor);
             executor.shutdown();
             try {
                 boolean termination = executor.awaitTermination(waitFor.timeoutInMillis(), TimeUnit.MILLISECONDS);
@@ -72,7 +78,7 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
         }
     }
 
-    private Supplier<Boolean> findFirstLogContaining(String logToFind) {
+    private Supplier<Boolean> findFirstLogContaining(String logToFind, String containerId) {
         return () -> {
             try (Stream<String> logs = dockerClient.logs(containerId)) {
                 return logs.anyMatch(log -> log.contains(logToFind));
@@ -80,16 +86,16 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
         };
     }
 
-    private Docker findDockerAnnotation(ExtensionContext extensionContext) {
+    private static Docker[] findDockerAnnotations(ExtensionContext extensionContext) {
         Class<?> testClass = extensionContext.getTestClass().get();
-        return testClass.getAnnotation(Docker.class);
+        return testClass.getAnnotationsByType(Docker.class);
     }
 
-    private String findImageName(Docker dockerAnnotation) {
+    private static String findImageName(Docker dockerAnnotation) {
         return dockerAnnotation.image();
     }
 
-    private Map<String, String> createEnvironmentMap(Docker dockerAnnotation) {
+    private static Map<String, String> createEnvironmentMap(Docker dockerAnnotation) {
         Map<String, String> environmentMap = new HashMap<>();
         Environment[] environments = dockerAnnotation.environments();
         for (Environment environment : environments) {
@@ -98,7 +104,7 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
         return environmentMap;
     }
 
-    private PortBinding[] createPortBindings(Docker dockerAnnotation) {
+    private static PortBinding[] createPortBindings(Docker dockerAnnotation) {
         Port[] ports = dockerAnnotation.ports();
         PortBinding[] portBindings = new PortBinding[ports.length];
         for (int i = 0; i < ports.length; i++) {
@@ -109,14 +115,29 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
     }
 
     @Override
-    public void afterAll(ExtensionContext containerExtensionContext) {
-        Docker dockerAnnotation = findDockerAnnotation(containerExtensionContext);
-        if (!dockerAnnotation.newForEachCase()) dockerClient.stopAndRemoveContainer(containerId);
+    public void afterAll(ExtensionContext context) {
+        forEachDocker(context, d -> !d.newForEachCase(), this::stopAndRemove);
     }
 
     @Override
     public void afterEach(ExtensionContext context) {
-        Docker dockerAnnotation = findDockerAnnotation(context);
-        if (dockerAnnotation.newForEachCase()) dockerClient.stopAndRemoveContainer(containerId);
+        forEachDocker(context, Docker::newForEachCase, this::stopAndRemove);
     }
+
+    private void stopAndRemove(ExtensionContext context, Docker docker) {
+        ContainerInfo containerInfo = getStore(context).remove(docker, ContainerInfo.class);
+
+        String containerId = containerInfo.getContainerId();
+
+        containerInfo.getNetworkIds().forEach(c -> {
+            dockerClient.disconnectFromNetwork(containerId, c);
+            dockerClient.maybeRemoveNetwork(c);
+        });
+        dockerClient.stopAndRemoveContainer(containerId);
+    }
+
+    private static ExtensionContext.Store getStore(ExtensionContext context) {
+        return context.getStore(ExtensionContext.Namespace.GLOBAL);
+    }
+
 }

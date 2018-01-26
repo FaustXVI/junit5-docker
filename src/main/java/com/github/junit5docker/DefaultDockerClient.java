@@ -3,12 +3,17 @@ package com.github.junit5docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.github.dockerjava.api.model.ExposedPort.tcp;
@@ -25,12 +30,59 @@ class DefaultDockerClient implements DockerClientAdapter {
     }
 
     @Override
-    public String startContainer(String wantedImage, Map<String, String> environment, PortBinding... portBinding) {
+    public ContainerInfo startContainer(String wantedImage, Map<String, String> environment, String[] networkNames, PortBinding... portBinding) {
         Ports bindings = createPortBindings(portBinding);
         List<String> environmentStrings = createEnvironmentList(environment);
         String containerId = createContainer(wantedImage, bindings, environmentStrings);
         dockerClient.startContainerCmd(containerId).exec();
-        return containerId;
+        Collection<String> networkIds = joinNetworks(networkNames, containerId);
+        return new ContainerInfo(containerId, networkIds);
+    }
+
+    private Collection<String> joinNetworks(String[] networkNames, String containerId) {
+        if (networkNames == null || networkNames.length == 0) {
+            return Collections.emptySet();
+        }
+        Collection<String> networkIds = new HashSet<>();
+
+        for (String network : networkNames) {
+            String networkId = getNetworkId(network);
+            dockerClient.connectToNetworkCmd()
+                        .withNetworkId(networkId)
+                        .withContainerId(containerId)
+                        .exec();
+            networkIds.add(networkId);
+        }
+        return networkIds;
+    }
+
+    private String getNetworkId(String networkName) {
+        return getExistingNetworkId(networkName)
+                   .orElseGet(() -> dockerClient.createNetworkCmd().withName(networkName).exec().getId());
+    }
+
+    private Optional<String> getExistingNetworkId(String networkName) {
+        return dockerClient.listNetworksCmd().exec().stream()
+                           .filter(n -> n.getName().equals(networkName))
+                           .reduce((a, b) -> {
+                               throw new IllegalStateException("Multiple networks found with the same name: " + a + ", " + b);
+                           })
+                           .map(Network::getId);
+    }
+
+    @Override
+    public void disconnectFromNetwork(String containerId, String networkId) {
+        dockerClient.disconnectFromNetworkCmd()
+                    .withContainerId(containerId)
+                    .withNetworkId(networkId)
+                    .exec();
+    }
+
+    @Override
+    public void maybeRemoveNetwork(String networkId) {
+        if (dockerClient.inspectNetworkCmd().withNetworkId(networkId).exec().getContainers().isEmpty()) {
+            dockerClient.removeNetworkCmd(networkId).exec();
+        }
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.github.junit5docker;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -20,6 +21,7 @@ import static com.github.junit5docker.WaitFor.NOTHING;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(DockerExtension.class)
+@Repeatable(value = Dockers.class)
 public @interface Docker {
 
     /**
@@ -51,4 +53,10 @@ public @interface Docker {
      * False if it should be created only once for the test class.
      */
     boolean newForEachCase() default true;
+
+    /**
+     * The names of the networks for the container to join.
+     */
+    String[] networks() default {};
+
 }

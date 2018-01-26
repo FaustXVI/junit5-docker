@@ -9,6 +9,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -38,30 +40,34 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class DockerExtensionTest {
+class DockerExtensionTest {
 
     static final String WAITED_LOG = "started";
 
-    private DockerClientAdapter dockerClient = mock(DockerClientAdapter.class);
+    private static final String CONTAINER_ID = "CONTAINER_ID";
 
-    private DockerExtension dockerExtension = new DockerExtension(dockerClient);
+    private final DockerClientAdapter dockerClient = mock(DockerClientAdapter.class);
+
+    private final DockerExtension dockerExtension = new DockerExtension(dockerClient);
 
     @Nested
     class BeforeEachTestsShould {
 
         @Test
-        public void startContainerNotMarked() {
+        void startContainerNotMarked() {
+            when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
             ExtensionContext context = new FakeExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.beforeEach(context);
-            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
-                eq(new PortBinding(8801, 8800)));
+            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), any(),
+                                                eq(new PortBinding(8801, 8800)));
         }
 
         @Test
-        public void notStartContainerIfMarkedAsReused() {
+        void notStartContainerIfMarkedAsReused() {
             ExtensionContext context = new FakeExtensionContext(DoNotRecreateContainerTest.class);
             dockerExtension.beforeEach(context);
             verify(dockerClient, never()).startContainer(any(), anyMap(), any());
@@ -74,48 +80,55 @@ public class DockerExtensionTest {
         @Captor
         private ArgumentCaptor<Map<String, String>> mapArgumentCaptor;
 
+        @Captor
+        private ArgumentCaptor<String[]> stringArrayArgumentCaptor;
+
         @BeforeEach
-        public void initMocks() {
+        void initMocks() {
             MockitoAnnotations.initMocks(this);
         }
 
         @Test
-        public void startContainerWithOnePort() {
+        void startContainerWithOnePort() {
             ExtensionContext context = new FakeExtensionContext(OnePortTest.class);
+            when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
             dockerExtension.beforeAll(context);
-            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
+            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), any(),
                 eq(new PortBinding(8801, 8800)));
         }
 
         @Test
-        public void notStartContainerIfMarkedAsRecreated() {
+        void notStartContainerIfMarkedAsRecreated() {
             ExtensionContext context = new FakeExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient, never()).startContainer(any(), anyMap(), any());
         }
 
         @Test
-        public void startContainerWithMultiplePorts() {
+        void startContainerWithMultiplePorts() {
+            when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
             ExtensionContext context = new FakeExtensionContext(MultiplePortTest.class);
             dockerExtension.beforeAll(context);
-            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(),
+            verify(dockerClient).startContainer(eq("wantedImage"), anyMap(), any(),
                 eq(new PortBinding(8801, 8800)),
                 eq(new PortBinding(9901, 9900)));
         }
 
         @Test
-        public void notWaitByDefault() {
+        void notWaitByDefault() {
+            when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
             ExtensionContext context = new FakeExtensionContext(WaitForNothingTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient, never()).logs(anyString());
         }
 
         @Test
-        public void startContainerWithEnvironmentVariables() {
+        void startContainerWithEnvironmentVariables() {
+            when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
             ExtensionContext context = new FakeExtensionContext(OneEnvironmentTest.class);
             dockerExtension.beforeAll(context);
             verify(dockerClient).startContainer(eq("wantedImage"),
-                mapArgumentCaptor.capture(), any());
+                mapArgumentCaptor.capture(), any(), any());
             Map<String, String> environment = mapArgumentCaptor.getValue();
             assertThat(environment)
                 .hasSize(1)
@@ -123,11 +136,23 @@ public class DockerExtensionTest {
                 .containsValues("myValue");
         }
 
+        @Test
+        void startContainerWithNetworks() {
+            List<String> networkIds = Arrays.asList("my-network-1", "my-network-2");
+            when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, networkIds));
+            ExtensionContext context = new FakeExtensionContext(TwoNetworksTest.class);
+            dockerExtension.beforeAll(context);
+            verify(dockerClient).startContainer(eq("wantedImage"), any(), stringArrayArgumentCaptor.capture(), any());
+            String[] networks = stringArrayArgumentCaptor.getValue();
+            assertThat(networks).containsExactly("my-network-1", "my-network-2");
+        }
+
         @Nested
         class BeThreadSafe {
 
             @Test
-            public void waitForLogToAppear() throws ExecutionException, InterruptedException {
+            void waitForLogToAppear() throws ExecutionException, InterruptedException {
+                when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
                 ExtensionContext context = new FakeExtensionContext(WaitForLogTest.class);
                 long duration = sendLogAndTimeExecution(100,
                     TimeUnit.MILLISECONDS, () -> dockerExtension.beforeAll(context));
@@ -138,7 +163,8 @@ public class DockerExtensionTest {
             }
 
             @Test
-            public void closeLogStreamOnceFound() throws ExecutionException, InterruptedException {
+            void closeLogStreamOnceFound() {
+                when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
                 AtomicBoolean streamClosed = new AtomicBoolean(false);
                 Stream<String> logStream = Stream.of(WAITED_LOG).onClose(() -> streamClosed.set(true));
                 when(dockerClient.logs(argThat(argument -> true))).thenReturn(logStream);
@@ -147,7 +173,8 @@ public class DockerExtensionTest {
             }
 
             @Test
-            public void closeLogEvenWithExceptionOnRead() throws ExecutionException, InterruptedException {
+            void closeLogEvenWithExceptionOnRead() {
+                when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
                 AtomicBoolean streamClosed = new AtomicBoolean(false);
                 Stream<String> logStream = Stream.<String>generate(() -> {
                     throw new RuntimeException();
@@ -161,7 +188,8 @@ public class DockerExtensionTest {
             }
 
             @Test
-            public void timeoutIfLogDoesNotAppear() {
+            void timeoutIfLogDoesNotAppear() {
+                when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
                 assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
                     ExtensionContext context = new FakeExtensionContext(TimeoutTest.class);
                     sendLogAndTimeExecution(1, TimeUnit.SECONDS, () -> dockerExtension.beforeAll(context));
@@ -169,7 +197,8 @@ public class DockerExtensionTest {
             }
 
             @Test
-            public void throwsExceptionIfLogNotFoundAndLogsEnded() {
+            void throwsExceptionIfLogNotFoundAndLogsEnded() {
+                when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
                 assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> {
                     ExtensionContext context =
                         new FakeExtensionContext(WaitForNotPresentLogTest.class);
@@ -179,7 +208,8 @@ public class DockerExtensionTest {
             }
 
             @Test
-            public void beInterruptible() throws ExecutionException, InterruptedException {
+            void beInterruptible() throws ExecutionException, InterruptedException {
+                when(dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
                 ExtensionContext context = new FakeExtensionContext(InterruptionTest.class);
                 Thread mainThread = Thread.currentThread();
                 CountDownLatch logRequest = new CountDownLatch(1);
@@ -236,25 +266,22 @@ public class DockerExtensionTest {
     @Nested
     class AfterEachTestsShould {
 
-        private static final String CONTAINER_ID = "CONTAINER_ID";
+        ExtensionContext defaultCreationContainerTest = new FakeExtensionContext(DefaultCreationContainerTest.class);
 
         @BeforeEach
-        public void callBefore() {
-            when(dockerClient.startContainer(anyString(), anyMap(),
-                any()))
-                .thenReturn(CONTAINER_ID);
-            dockerExtension.beforeEach(new FakeExtensionContext(DefaultCreationContainerTest.class));
+        void callBefore() {
+            when (dockerClient.startContainer(anyString(), anyMap(), any(), any())).thenReturn(new ContainerInfo(CONTAINER_ID, null));
+            dockerExtension.beforeEach(defaultCreationContainerTest);
         }
 
         @Test
-        public void stopContainer() {
-            ExtensionContext context = new FakeExtensionContext(DefaultCreationContainerTest.class);
-            dockerExtension.afterEach(context);
+        void stopContainer() {
+            dockerExtension.afterEach(defaultCreationContainerTest);
             verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
         }
 
         @Test
-        public void notStopContainerNotMarkedAsRenewable() {
+        void notStopContainerNotMarkedAsRenewable() {
             ExtensionContext context = new FakeExtensionContext(OnePortTest.class);
             dockerExtension.afterEach(context);
             verify(dockerClient, never()).stopAndRemoveContainer(any());
@@ -265,29 +292,39 @@ public class DockerExtensionTest {
     @Nested
     class AfterAllTestsShould {
 
-        private static final String CONTAINER_ID = "CONTAINER_ID";
+        private final FakeExtensionContext onePortExtensionContext = new FakeExtensionContext(OnePortTest.class);
 
         @BeforeEach
-        public void callBefore() {
-            when(dockerClient.startContainer(anyString(), anyMap(),
-                any()))
-                .thenReturn(CONTAINER_ID);
-            dockerExtension.beforeAll(new FakeExtensionContext(OnePortTest.class));
+        void callBefore() {
+            when(dockerClient.startContainer(anyString(), anyMap(), any(), any()))
+                .thenReturn(new ContainerInfo(CONTAINER_ID, null));
+            dockerExtension.beforeAll(onePortExtensionContext);
         }
 
         @Test
-        public void stopContainer() {
-            ExtensionContext context = new FakeExtensionContext(OnePortTest.class);
-            dockerExtension.afterAll(context);
+        void stopContainer() {
+            dockerExtension.afterAll(onePortExtensionContext);
             verify(dockerClient).stopAndRemoveContainer(CONTAINER_ID);
         }
 
         @Test
-        public void notStopContainerMarkedAsRenewable() {
+        void notStopContainerMarkedAsRenewable() {
             ExtensionContext context = new FakeExtensionContext(DefaultCreationContainerTest.class);
             dockerExtension.afterAll(context);
             verify(dockerClient, never()).stopAndRemoveContainer(any());
         }
+        @Test
+        void disconnectFromAndRemoveNetworks() {
+            ExtensionContext context = new FakeExtensionContext(TwoNetworksTest.class);
+            List<String> networkIds = Arrays.asList("111", "222");
+            when(dockerClient.startContainer(anyString(), anyMap(), any(), any()))
+                .thenReturn(new ContainerInfo(CONTAINER_ID, networkIds));
+            dockerExtension.beforeAll(context);
+            dockerExtension.afterAll(context);
+            verify(dockerClient, times(2)).disconnectFromNetwork(eq(CONTAINER_ID), argThat(networkIds::contains));
+            verify(dockerClient, times(2)).maybeRemoveNetwork(any());
+        }
+
     }
 
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800), newForEachCase = false)
@@ -304,6 +341,12 @@ public class DockerExtensionTest {
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
         environments = @Environment(key = "toTest", value = "myValue"), newForEachCase = false)
     private static class OneEnvironmentTest {
+
+    }
+
+    @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
+        networks = {"my-network-1", "my-network-2"}, newForEachCase = false)
+    private static class TwoNetworksTest {
 
     }
 
