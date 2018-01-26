@@ -1,6 +1,8 @@
 package com.github.junit5docker.fakes;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.engine.execution.ExtensionValuesStore;
+import org.junit.jupiter.engine.execution.NamespaceAwareStore;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -9,10 +11,14 @@ import java.util.Optional;
 import java.util.Set;
 
 public class FakeExtensionContext implements ExtensionContext {
+
     private final Class<?> testSampleClass;
+
+    private final ExtensionValuesStore valuesStore;
 
     public FakeExtensionContext(Class<?> testSampleClass) {
         this.testSampleClass = testSampleClass;
+        valuesStore = new ExtensionValuesStore(null);
     }
 
     @Override
@@ -71,6 +77,6 @@ public class FakeExtensionContext implements ExtensionContext {
 
     @Override
     public Store getStore(Namespace namespace) {
-        return null;
+        return new NamespaceAwareStore(valuesStore, namespace);
     }
 }

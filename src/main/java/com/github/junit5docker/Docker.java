@@ -3,6 +3,7 @@ package com.github.junit5docker;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -10,7 +11,7 @@ import java.lang.annotation.Target;
 import static com.github.junit5docker.WaitFor.NOTHING;
 
 /**
- * <p>This annotation is the junit-docker entry point.</p>
+ * <p>This annotation is a junit-docker entry point.</p>
  *
  * <p>Adding this annotation to a test's class will start a docker container before running the tests and will be stop
  * at the end of the tests. This is done once per class.</p>
@@ -20,6 +21,7 @@ import static com.github.junit5docker.WaitFor.NOTHING;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(DockerExtension.class)
+@Repeatable(value = Dockers.class)
 public @interface Docker {
 
     /**
@@ -51,4 +53,11 @@ public @interface Docker {
      * False if it should be created only once for the test class.
      */
     boolean newForEachCase() default true;
+
+    /**
+     * @return the names of the networks for the container to join.
+     * Empty if the container has no networks to join.
+     */
+    String[] networks() default {};
+
 }
