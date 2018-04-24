@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
@@ -56,7 +57,7 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
         String expectedLog = waitFor.value();
         if (!WaitFor.NOTHING.equals(expectedLog)) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            CompletableFuture<Boolean> logFound = supplyAsync(findFirstLogContaining(expectedLog), executor);
+            CompletableFuture<Boolean> logFound = supplyAsync(findFirstLogContaining(waitFor), executor);
             executor.shutdown();
             try {
                 boolean termination = executor.awaitTermination(waitFor.timeoutInMillis(), TimeUnit.MILLISECONDS);
@@ -72,10 +73,16 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
         }
     }
 
-    private Supplier<Boolean> findFirstLogContaining(String logToFind) {
+    private Supplier<Boolean> findFirstLogContaining(WaitFor logToFind) {
         return () -> {
             try (Stream<String> logs = dockerClient.logs(containerId)) {
-                return logs.anyMatch(log -> log.contains(logToFind));
+                if (WaitFor.Engine.PLAIN_TEXT.equals(logToFind.engine())) {
+                    return logs.anyMatch(log -> log.contains(logToFind.value()));
+                }else{
+                    // Regex
+                    Pattern pattern = Pattern.compile(logToFind.value());
+                    return logs.anyMatch(log -> pattern.matcher(log).find());
+                }
             }
         };
     }

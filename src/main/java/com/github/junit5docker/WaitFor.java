@@ -25,7 +25,23 @@ public @interface WaitFor {
     String value();
 
     /**
+     * @return engine use to parse log
+     */
+    Engine engine() default Engine.PLAIN_TEXT ;
+
+    /**
      * @return the time in milliseconds to wait for the log before giving up.
      */
     int timeoutInMillis() default DEFAULT_TIMEOUT;
+
+    enum Engine {
+        /**
+         * search for simple string
+         */
+        PLAIN_TEXT,
+        /**
+         * search for regex pattern
+         */
+        REGEX
+    }
 }
