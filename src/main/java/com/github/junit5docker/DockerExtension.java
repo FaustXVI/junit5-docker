@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.commons.util.AnnotationUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,7 +83,8 @@ class DockerExtension implements BeforeAllCallback, AfterAllCallback, BeforeEach
 
     private Docker findDockerAnnotation(ExtensionContext extensionContext) {
         Class<?> testClass = extensionContext.getTestClass().get();
-        return testClass.getAnnotation(Docker.class);
+        return AnnotationUtils.findAnnotation(testClass, Docker.class).orElseThrow(
+            () -> new IllegalStateException(String.format("Could not find @Docker on class %s", testClass.getName())));
     }
 
     private String findImageName(Docker dockerAnnotation) {
