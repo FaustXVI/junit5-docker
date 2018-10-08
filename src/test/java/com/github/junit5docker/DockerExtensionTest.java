@@ -31,6 +31,7 @@ import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -260,6 +261,18 @@ public class DockerExtensionTest {
             verify(dockerClient, never()).stopAndRemoveContainer(any());
         }
 
+        @Test
+        public void throwClassNotFoundExceptionWhenDockerAnnotationIsNotPresent() {
+            ExtensionContext context = new FakeExtensionContext(MissingDockerAnnotationClass.class);
+            Throwable exception = assertThrows(IllegalStateException.class, () -> {
+                dockerExtension.beforeEach(context);
+            });
+
+            assertThat(exception.getMessage()).isEqualTo(
+                "Could not find @Docker on class "
+                    + "com.github.junit5docker.DockerExtensionTest$MissingDockerAnnotationClass");
+        }
+
     }
 
     @Nested
@@ -304,6 +317,10 @@ public class DockerExtensionTest {
     @Docker(image = "wantedImage", ports = @Port(exposed = 8801, inner = 8800),
         environments = @Environment(key = "toTest", value = "myValue"), newForEachCase = false)
     private static class OneEnvironmentTest {
+
+    }
+
+    private static class MissingDockerAnnotationClass {
 
     }
 
